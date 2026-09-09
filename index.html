@@ -52,12 +52,15 @@ h1 span{ color: var(--coral); }
   display:flex; align-items:center; gap:12px; margin-bottom:18px;
 }
 .resume-box img{ width:40px; height:40px; border-radius:50%; object-fit:cover; }
+.resume-box .avatar-fallback{ width:40px; height:40px; border-radius:50%; background:var(--teal); color:#fff; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
 .resume-box .info{ flex:1; font-size:13px; color: var(--ink-soft); }
 .resume-box .info b{ color: var(--ink); font-size:14px; }
-.link-btn{ background:none; border:none; color: var(--ink-soft); font-size:12.5px; text-decoration:underline; cursor:pointer; padding:0; }
 
 .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
 .field label{ font-size:13px; font-weight:600; color: var(--ink-soft); }
+.field.checkbox-field{ flex-direction:row; align-items:center; gap:8px; }
+.field.checkbox-field input{ width:auto; }
+.field.checkbox-field label{ font-weight:500; color: var(--ink); }
 input[type=text], input[type=password]{
   font-family:'Inter', sans-serif; font-size:15px; padding:11px 14px; border-radius:12px;
   border:1.5px solid var(--line); outline:none; background:#FBF9F1; width:100%;
@@ -102,6 +105,10 @@ input:focus{ border-color: var(--teal); }
 .room-code-box .label{ font-size:13px; color: var(--ink-soft); margin-bottom:6px; }
 .room-code-box .code{ font-family:'Baloo 2', sans-serif; font-weight:800; font-size:36px; letter-spacing:8px; color: var(--teal-deep); }
 .room-code-box img.qr{ width:130px; height:130px; margin-top:12px; border-radius:12px; border:1px solid var(--line); }
+.admin-badge{
+  display:inline-flex; align-items:center; gap:6px; background: var(--yellow); color: var(--ink);
+  font-family:'Baloo 2', sans-serif; font-weight:700; font-size:12.5px; padding:5px 12px; border-radius:999px; margin-bottom:14px;
+}
 
 .player-list{ display:flex; flex-wrap:wrap; gap:12px; margin: 14px 0 6px; }
 .player-chip{
@@ -202,8 +209,9 @@ input:focus{ border-color: var(--teal); }
   <section id="roleScreen">
     <div class="panel">
       <div class="resume-box" id="resumeBox" hidden>
-        <img id="resumeAvatar">
-        <div class="info"><b id="resumeName"></b>님으로 방 <span id="resumeRoomCode"></span>에 참여 중이었어요.</div>
+        <img id="resumeAvatar" hidden>
+        <div class="avatar-fallback" id="resumeAvatarFallback" hidden>🛠️</div>
+        <div class="info"><b id="resumeName"></b><span id="resumeExtra"></span></div>
       </div>
       <div style="display:flex; gap:10px; margin-bottom:18px;" id="resumeActions" hidden>
         <button class="btn btn-primary" id="resumeBtn" style="flex:1;">이어서 참여하기</button>
@@ -236,6 +244,10 @@ input:focus{ border-color: var(--teal); }
       <div class="field">
         <label for="hostPasswordInput">비밀번호</label>
         <input type="text" id="hostPasswordInput" placeholder="참가자에게 알려줄 비밀번호" maxlength="20">
+      </div>
+      <div class="field checkbox-field">
+        <input type="checkbox" id="hostParticipateCheckbox" checked>
+        <label for="hostParticipateCheckbox">저도 참가자로 게임에 참여할게요 (끄면 진행만 하는 관리자가 돼요)</label>
       </div>
       <div class="error-text" id="hostSetupError"></div>
       <div style="display:flex; gap:10px;">
@@ -297,6 +309,7 @@ input:focus{ border-color: var(--teal); }
   <!-- 2. 로비 -->
   <section id="lobbyScreen" hidden>
     <div class="panel room-code-box">
+      <div id="adminBadge" class="admin-badge" hidden>🛠️ 진행자(관리자)로 접속 중</div>
       <div class="label">방 코드</div>
       <div class="code" id="lobbyCode">0000</div>
       <img class="qr" id="lobbyQr" alt="QR">
@@ -358,7 +371,7 @@ input:focus{ border-color: var(--teal); }
       <div class="quiz-choices" id="quizChoices"></div>
     </div>
     <div class="panel win-panel" id="quizResultPanel" hidden>
-      <div class="big">🎊 퀴즈 완료!</div>
+      <div class="big" id="quizResultBig">🎊 퀴즈 완료!</div>
       <p class="sub" id="quizResultSummary"></p>
       <h2 style="text-align:left; font-size:16px;">실시간 순위</h2>
       <ul class="leaderboard" id="leaderboardList"></ul>
@@ -400,16 +413,16 @@ const db = getFirestore(app);
 const $ = (id)=> document.getElementById(id);
 const els = {};
 ['roleScreen','hostSetupScreen','codeEntryScreen','registerScreen','lobbyScreen','teamSetupScreen','gameScreen','quizScreen','resultScreen',
- 'resumeBox','resumeAvatar','resumeName','resumeRoomCode','resumeActions','resumeBtn','clearSessionBtn',
+ 'resumeBox','resumeAvatar','resumeAvatarFallback','resumeName','resumeExtra','resumeActions','resumeBtn','clearSessionBtn',
  'createRoleBtn','joinRoleBtn',
- 'hostCodeInput','hostPasswordInput','hostSetupError','backFromHostSetupBtn','hostSetupNextBtn',
+ 'hostCodeInput','hostPasswordInput','hostParticipateCheckbox','hostSetupError','backFromHostSetupBtn','hostSetupNextBtn',
  'codeInput','joinPasswordInput','codeError','backFromCodeBtn','checkCodeBtn',
  'registerTitle','nameMatchBox','nameMatchText','claimExistingBtn','dismissClaimBtn',
  'photoPicker','photoInput','photoPreview','photoPlaceholder','nameInput','registerError','registerBtn',
- 'lobbyCode','lobbyQr','playerCount','playerList','waitingNote','hostControls','soloModeBtn','teamModeBtn','quizModeBtn',
+ 'adminBadge','lobbyCode','lobbyQr','playerCount','playerList','waitingNote','hostControls','soloModeBtn','teamModeBtn','quizModeBtn',
  'teamCountLabel','teamMinus','teamPlus','teamNameList','startTeamGameBtn','backToLobbyFromTeamBtn',
  'gameRoomTag','movesCount','matchCount','totalPairs','turnPill','teamScoreboard','grid',
- 'quizRoomTag','quizScoreLabel','quizQuestionPanel','quizProgress','quizPhoto','quizChoices','quizResultPanel','quizResultSummary','leaderboardList',
+ 'quizRoomTag','quizScoreLabel','quizQuestionPanel','quizProgress','quizPhoto','quizChoices','quizResultPanel','quizResultBig','quizResultSummary','leaderboardList',
  'resultTitle','resultSummary','rankList','newRoundBtn','resultWaitingNote'
 ].forEach(id => els[id] = $(id));
 
@@ -428,7 +441,8 @@ function genId(){ return (crypto.randomUUID ? crypto.randomUUID() : 'p-' + Date.
 
 // ---- app state ----
 let roomCode = null, playerId = null;
-let pendingPassword = null; // used only while creating a room
+let isAdminController = false;   // true = host chose "진행만 할게요" (no player doc for this browser)
+let pendingHostClaim = false;    // true while a participating host is mid-registration
 let roomCache = null, playersCache = [];
 let unsubRoom = null, unsubPlayers = null;
 let pendingPhoto = null;
@@ -436,10 +450,13 @@ let localTeamCount = 2, localTeamNames = ['1팀','2팀'];
 let quizLocalLock = false;
 let matchedExistingPlayer = null; // for name-collision resume flow
 
-function amHost(){ return !!(roomCache && playerId && roomCache.hostPlayerId === playerId); }
+function amHost(){
+  if(isAdminController) return true;
+  return !!(roomCache && playerId && roomCache.hostPlayerId === playerId);
+}
 
 async function saveSession(){
-  try{ await window.storage.set(SESSION_KEY, JSON.stringify({ roomCode, playerId }), false); }catch(e){}
+  try{ await window.storage.set(SESSION_KEY, JSON.stringify({ roomCode, playerId, isAdmin: isAdminController }), false); }catch(e){}
 }
 async function clearSession(){
   try{ await window.storage.delete(SESSION_KEY, false); }catch(e){}
@@ -449,6 +466,7 @@ async function clearSession(){
 els.createRoleBtn.addEventListener('click', ()=>{
   els.hostCodeInput.value = genCode();
   els.hostPasswordInput.value = '';
+  els.hostParticipateCheckbox.checked = true;
   els.hostSetupError.textContent = '';
   showOnly(els.hostSetupScreen);
 });
@@ -467,13 +485,31 @@ els.hostSetupNextBtn.addEventListener('click', async ()=>{
   if(!CODE_RE.test(code)){ els.hostSetupError.textContent = '코드는 영문/숫자 4~8자로 입력해주세요.'; return; }
   if(!password){ els.hostSetupError.textContent = '비밀번호를 입력해주세요.'; return; }
   els.hostSetupNextBtn.disabled = true;
+  els.hostSetupError.textContent = '';
   try{
     const snap = await getDoc(doc(db, 'rooms', code));
     if(snap.exists()){ els.hostSetupError.textContent = '이미 사용 중인 코드예요. 다른 코드를 입력해주세요.'; return; }
-    roomCode = code; pendingPassword = password;
-    els.registerTitle.textContent = '호스트로 등록하기';
-    resetRegisterForm();
-    showOnly(els.registerScreen);
+
+    roomCode = code;
+    // room is created right here, regardless of whether the host also plays —
+    // this guarantees the room exists as soon as this step is done.
+    await setDoc(doc(db, 'rooms', roomCode), {
+      status: 'lobby', mode: null, hostPlayerId: null, roundId: 0, password,
+      cards: [], flippedIndices: [], mismatchAt: null,
+      moves: 0, matches: 0, totalPairs: 0, teams: [], currentTeamIdx: 0,
+      createdAt: Date.now()
+    });
+
+    if(els.hostParticipateCheckbox.checked){
+      pendingHostClaim = true;
+      els.registerTitle.textContent = '호스트로 등록하기';
+      resetRegisterForm();
+      showOnly(els.registerScreen);
+    } else {
+      isAdminController = true; playerId = null;
+      await saveSession();
+      subscribeRoom(); subscribePlayers();
+    }
   }catch(e){
     els.hostSetupError.textContent = '연결에 실패했어요. Firestore 규칙을 확인해주세요.';
   }finally{
@@ -491,7 +527,7 @@ els.checkCodeBtn.addEventListener('click', async ()=>{
     const snap = await getDoc(doc(db, 'rooms', code));
     if(!snap.exists()){ els.codeError.textContent = '존재하지 않는 방 코드예요.'; return; }
     if(snap.data().password !== password){ els.codeError.textContent = '비밀번호가 틀렸어요.'; return; }
-    roomCode = code; pendingPassword = null;
+    roomCode = code;
     els.registerTitle.textContent = '참가자 등록';
     resetRegisterForm();
     showOnly(els.registerScreen);
@@ -586,15 +622,6 @@ els.registerBtn.addEventListener('click', async ()=>{
 });
 
 async function enterRoomAsPlayer(isNewPlayer, name){
-  if(pendingPassword !== null){
-    // creating a brand new room (host)
-    await setDoc(doc(db, 'rooms', roomCode), {
-      status: 'lobby', mode: null, hostPlayerId: playerId, roundId: 0, password: pendingPassword,
-      cards: [], flippedIndices: [], mismatchAt: null,
-      moves: 0, matches: 0, totalPairs: 0, teams: [], currentTeamIdx: 0,
-      createdAt: Date.now()
-    });
-  }
   if(isNewPlayer){
     await setDoc(doc(db, 'rooms', roomCode, 'players', playerId), {
       name, photo: pendingPhoto, joinedAt: Date.now(),
@@ -603,6 +630,10 @@ async function enterRoomAsPlayer(isNewPlayer, name){
   } else if(pendingPhoto){
     // resumed as existing player with a fresh photo
     await updateDoc(doc(db, 'rooms', roomCode, 'players', playerId), { photo: pendingPhoto });
+  }
+  if(pendingHostClaim){
+    await updateDoc(doc(db, 'rooms', roomCode), { hostPlayerId: playerId });
+    pendingHostClaim = false;
   }
   saveSession();
   subscribeRoom();
@@ -641,6 +672,7 @@ function renderFromRoom(){
 
 // ---- lobby ----
 function renderLobby(){
+  els.adminBadge.hidden = !isAdminController;
   els.lobbyCode.textContent = roomCode;
   const link = location.origin + location.pathname + '?room=' + roomCode;
   els.lobbyQr.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(link);
@@ -812,8 +844,25 @@ async function resolveMismatch(){
 }
 
 // ---- quiz ----
+function leaderboardHtml(){
+  const finishedRound = playersCache.filter(p => p.quizRoundId === roomCache.roundId);
+  const sorted = [...finishedRound].sort((a,b)=> b.quizScore - a.quizScore);
+  const topScore = sorted.length ? sorted[0].quizScore : 0;
+  return sorted.map(p =>
+    `<li class="${p.quizScore===topScore && p.quizFinished ? 'first':''}">
+      <span class="who"><img src="${p.photo}">${escapeHtml(p.name)}${p.quizFinished ? '':' (진행중)'}</span>
+      <span>${p.quizScore}점</span>
+    </li>`).join('');
+}
+function renderAdminQuizMonitor(){
+  els.quizQuestionPanel.hidden = true; els.quizResultPanel.hidden = false;
+  els.quizResultBig.textContent = '📊 실시간 진행 현황';
+  els.quizResultSummary.textContent = '참가자들이 각자 속도로 퀴즈를 풀고 있어요.';
+  els.leaderboardList.innerHTML = leaderboardHtml();
+}
 function ensureQuizStarted(){
   els.quizRoomTag.textContent = '방 ' + roomCode;
+  if(isAdminController){ renderAdminQuizMonitor(); return; }
   const me = playersCache.find(p => p.id === playerId);
   if(!me) return;
   if(me.quizRoundId !== roomCache.roundId){
@@ -828,9 +877,11 @@ function ensureQuizStarted(){
   else renderQuizQuestion(me);
 }
 function renderQuizLeaderboardMaybe(){
-  const me = playersCache.find(p => p.id === playerId);
-  if(!me || !roomCache) return;
+  if(!roomCache) return;
   if(roomCache.mode !== 'quiz' || roomCache.status !== 'playing') return;
+  if(isAdminController){ renderAdminQuizMonitor(); return; }
+  const me = playersCache.find(p => p.id === playerId);
+  if(!me) return;
   if(me.quizRoundId !== roomCache.roundId) return;
   if(me.quizFinished) renderQuizResult(me);
   else renderQuizQuestion(me);
@@ -880,17 +931,11 @@ async function handleQuizAnswer(btn, correct, me){
 }
 function renderQuizResult(me){
   els.quizQuestionPanel.hidden = true; els.quizResultPanel.hidden = false;
+  els.quizResultBig.textContent = '🎊 퀴즈 완료!';
   const total = (me.quizOrder||[]).length || 1;
   const pct = Math.round((me.quizScore/total)*100);
   els.quizResultSummary.textContent = `${total}문제 중 ${me.quizScore}개 맞혔어요! (${pct}%)`;
-  const finishedRound = playersCache.filter(p => p.quizRoundId === roomCache.roundId);
-  const sorted = [...finishedRound].sort((a,b)=> b.quizScore - a.quizScore);
-  const topScore = sorted.length ? sorted[0].quizScore : 0;
-  els.leaderboardList.innerHTML = sorted.map(p =>
-    `<li class="${p.quizScore===topScore && p.quizFinished ? 'first':''}">
-      <span class="who"><img src="${p.photo}">${escapeHtml(p.name)}${p.quizFinished ? '':' (진행중)'}</span>
-      <span>${p.quizScore}점</span>
-    </li>`).join('');
+  els.leaderboardList.innerHTML = leaderboardHtml();
 }
 
 // ---- result screen (solo/team) ----
@@ -936,7 +981,16 @@ els.clearSessionBtn.addEventListener('click', async ()=>{
 
 async function resumeSession(saved){
   try{
-    roomCode = saved.roomCode; playerId = saved.playerId;
+    roomCode = saved.roomCode;
+    if(saved.isAdmin){
+      const roomSnap = await getDoc(doc(db,'rooms',roomCode));
+      if(!roomSnap.exists()){ await clearSession(); showOnly(els.roleScreen); return; }
+      isAdminController = true; playerId = null;
+      roomCache = roomSnap.data();
+      subscribeRoom(); subscribePlayers();
+      return;
+    }
+    playerId = saved.playerId;
     const [roomSnap, playerSnap] = await Promise.all([
       getDoc(doc(db,'rooms',roomCode)),
       getDoc(doc(db,'rooms',roomCode,'players',playerId))
@@ -960,22 +1014,38 @@ async function afterSessionCheck(){
     if(res && res.value) saved = JSON.parse(res.value);
   }catch(e){}
 
-  if(saved && saved.roomCode && saved.playerId){
+  if(saved && saved.roomCode && (saved.isAdmin || saved.playerId)){
     window.__savedSession = saved;
     try{
-      const [roomSnap, playerSnap] = await Promise.all([
-        getDoc(doc(db,'rooms',saved.roomCode)),
-        getDoc(doc(db,'rooms',saved.roomCode,'players',saved.playerId))
-      ]);
-      if(roomSnap.exists() && playerSnap.exists()){
-        const p = playerSnap.data();
-        els.resumeAvatar.src = p.photo;
-        els.resumeName.textContent = p.name;
-        els.resumeRoomCode.textContent = saved.roomCode;
-        els.resumeBox.hidden = false;
-        els.resumeActions.hidden = false;
-        showOnly(els.roleScreen);
-        return;
+      if(saved.isAdmin){
+        const roomSnap = await getDoc(doc(db,'rooms',saved.roomCode));
+        if(roomSnap.exists()){
+          els.resumeAvatar.hidden = true;
+          els.resumeAvatarFallback.hidden = false;
+          els.resumeName.textContent = '진행자(관리자)';
+          els.resumeExtra.textContent = `로 방 ${saved.roomCode}를 관리 중이었어요.`;
+          els.resumeBox.hidden = false;
+          els.resumeActions.hidden = false;
+          showOnly(els.roleScreen);
+          return;
+        }
+      } else {
+        const [roomSnap, playerSnap] = await Promise.all([
+          getDoc(doc(db,'rooms',saved.roomCode)),
+          getDoc(doc(db,'rooms',saved.roomCode,'players',saved.playerId))
+        ]);
+        if(roomSnap.exists() && playerSnap.exists()){
+          const p = playerSnap.data();
+          els.resumeAvatar.hidden = false;
+          els.resumeAvatarFallback.hidden = true;
+          els.resumeAvatar.src = p.photo;
+          els.resumeName.textContent = p.name;
+          els.resumeExtra.textContent = `님으로 방 ${saved.roomCode}에 참여 중이었어요.`;
+          els.resumeBox.hidden = false;
+          els.resumeActions.hidden = false;
+          showOnly(els.roleScreen);
+          return;
+        }
       }
     }catch(e){}
   }
