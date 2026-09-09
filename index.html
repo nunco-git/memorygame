@@ -433,7 +433,11 @@ const els = {};
 
 const TEAM_COLORS = ['#FF6B5B','#1F6F6B','#FFC94D','#6C63FF','#2FA4C9','#E85D9B'];
 const DEMO_NAMES = ['민서','하늘','준영','다은','태호','유진','성민','아라','도현','지수','서준','예린'];
-const DEMO_COLORS = ['FF6B5B','1F6F6B','FFC94D','6C63FF','2FA4C9','E85D9B','8BC34A','FF9F43'];
+function pickDemoAvatarIds(n){
+  const pool = Array.from({length: 70}, (_,i)=> i+1);
+  shuffle(pool);
+  return pool.slice(0, n);
+}
 const SESSION_KEY = 'session';
 const CODE_RE = /^[A-Za-z0-9]{4,8}$/;
 
@@ -513,11 +517,11 @@ async function createDemoRoom(){
   });
 
   const shuffledNames = [...DEMO_NAMES].sort(()=> Math.random()-0.5).slice(0, 8);
+  const avatarIds = pickDemoAvatarIds(shuffledNames.length);
   const baseTime = Date.now();
   for(let i=0;i<shuffledNames.length;i++){
     const name = shuffledNames[i];
-    const color = DEMO_COLORS[i % DEMO_COLORS.length];
-    const photo = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${color}&color=fff&size=128&bold=true`;
+    const photo = `https://i.pravatar.cc/150?img=${avatarIds[i]}`;
     await setDoc(doc(db,'rooms',code,'players', genId()), {
       name, photo, joinedAt: baseTime + i,
       quizOrder: [], quizIndex: 0, quizScore: 0, quizFinished: false, quizRoundId: -1
