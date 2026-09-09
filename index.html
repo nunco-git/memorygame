@@ -187,6 +187,7 @@ input:focus{ border-color: var(--teal); }
 .win-panel{ text-align:center; padding: 34px 26px; }
 .win-panel .big{ font-family:'Baloo 2', sans-serif; font-size:24px; margin-bottom:6px; }
 .win-panel .sub{ margin-bottom:20px; }
+#resultSubStat{ margin-top:-14px; font-size:13px; color: var(--ink-soft); }
 .rank-list{ list-style:none; padding:0; margin:0 0 22px; display:flex; flex-direction:column; gap:8px; max-width:320px; margin-left:auto; margin-right:auto; }
 .rank-list li{ display:flex; align-items:center; justify-content:space-between; background:#FBF9F1; border:1.5px solid var(--line); border-radius:12px; padding:10px 16px; font-weight:600; }
 .rank-list li.first{ border-color: var(--yellow); background:#FFF8E4; }
@@ -335,6 +336,19 @@ input:focus{ border-color: var(--teal); }
     </div>
   </section>
 
+  <!-- 2a. 승부 방식 선택 (호스트 전용) -->
+  <section id="scoreModeScreen" hidden>
+    <div class="panel">
+      <h2>무엇으로 승부를 낼까요?</h2>
+      <p class="hint">게임이 끝났을 때 어떤 기준으로 결과를 보여줄지 정해주세요.</p>
+      <div class="mode-grid" style="grid-template-columns: repeat(2, 1fr);">
+        <button class="mode-card" id="scoreModeTimeBtn"><span class="icon">⏱️</span><div class="title">소요시간</div><div class="desc">모두 맞히는 데 걸린 시간으로 겨뤄요.</div></button>
+        <button class="mode-card" id="scoreModeAttemptsBtn"><span class="icon">🔢</span><div class="title">뒤집기 시도 횟수</div><div class="desc">카드를 뒤집은 총 횟수로 겨뤄요.</div></button>
+      </div>
+    </div>
+    <div class="panel"><button class="btn btn-ghost" id="backToLobbyFromScoreModeBtn">← 모드 다시 선택</button></div>
+  </section>
+
   <!-- 2b. 팀 설정 (호스트 전용) -->
   <section id="teamSetupScreen" hidden>
     <div class="panel">
@@ -357,12 +371,22 @@ input:focus{ border-color: var(--teal); }
   <section id="gameScreen" hidden>
     <div class="game-top">
       <span class="room-tag" id="gameRoomTag">방 0000</span>
-      <div class="stats"><div>시도 <b id="movesCount">0</b></div><div>맞춘 짝 <b id="matchCount">0</b> / <span id="totalPairs">0</span></div></div>
+      <div class="stats">
+        <div id="movesStatBox">시도 <b id="movesCount">0</b></div>
+        <div id="timeStatBox" hidden>⏱️ <b id="timeCount">00:00</b></div>
+        <div>맞춘 짝 <b id="matchCount">0</b> / <span id="totalPairs">0</span></div>
+      </div>
     </div>
     <div id="turnPill" class="turn-pill" hidden></div>
     <div id="teamScoreboard" class="team-scoreboard" hidden></div>
     <div class="grid" id="grid"></div>
+    <div class="panel" id="revealResultsPanel" hidden style="margin-top:18px; text-align:center;">
+      <p class="sub" style="margin-bottom:14px;">🎉 모든 짝을 다 맞혔어요!</p>
+      <button class="btn btn-primary btn-full" id="revealResultsBtn" hidden>🏁 최종 결과 보기</button>
+      <p class="waiting-note" id="revealWaitingNote" hidden>호스트가 최종 결과를 공개하길 기다리는 중이에요...</p>
+    </div>
   </section>
+
 
   <!-- 3b. 퀴즈 -->
   <section id="quizScreen" hidden>
@@ -388,6 +412,7 @@ input:focus{ border-color: var(--teal); }
     <div class="panel win-panel">
       <div class="big" id="resultTitle">🎊 게임 종료!</div>
       <p class="sub" id="resultSummary"></p>
+      <p class="sub" id="resultSubStat"></p>
       <ul class="rank-list" id="rankList" hidden></ul>
       <button class="btn btn-primary" id="newRoundBtn" hidden>새 라운드 시작</button>
       <p class="waiting-note" id="resultWaitingNote" hidden>호스트가 새 라운드를 시작하길 기다리는 중이에요...</p>
@@ -417,7 +442,7 @@ const db = getFirestore(app);
 
 const $ = (id)=> document.getElementById(id);
 const els = {};
-['roleScreen','hostSetupScreen','codeEntryScreen','registerScreen','lobbyScreen','teamSetupScreen','gameScreen','quizScreen','resultScreen',
+['roleScreen','hostSetupScreen','codeEntryScreen','registerScreen','lobbyScreen','scoreModeScreen','teamSetupScreen','gameScreen','quizScreen','resultScreen',
  'resumeBox','resumeAvatar','resumeAvatarFallback','resumeName','resumeExtra','resumeActions','resumeBtn','clearSessionBtn',
  'createRoleBtn','joinRoleBtn','demoRoleBtn',
  'hostCodeInput','hostPasswordInput','hostParticipateCheckbox','hostSetupError','backFromHostSetupBtn','hostSetupNextBtn',
@@ -425,10 +450,12 @@ const els = {};
  'registerTitle','nameMatchBox','nameMatchText','claimExistingBtn','dismissClaimBtn',
  'photoPicker','photoInput','photoPreview','photoPlaceholder','nameInput','registerError','registerBtn',
  'adminBadge','lobbyCode','lobbyQr','playerCount','playerList','waitingNote','hostControls','soloModeBtn','teamModeBtn','quizModeBtn',
+ 'scoreModeTimeBtn','scoreModeAttemptsBtn','backToLobbyFromScoreModeBtn',
  'teamCountLabel','teamMinus','teamPlus','teamNameList','startTeamGameBtn','backToLobbyFromTeamBtn',
- 'gameRoomTag','movesCount','matchCount','totalPairs','turnPill','teamScoreboard','grid',
+ 'gameRoomTag','movesStatBox','movesCount','timeStatBox','timeCount','matchCount','totalPairs','turnPill','teamScoreboard','grid',
+ 'revealResultsPanel','revealResultsBtn','revealWaitingNote',
  'quizRoomTag','quizScoreLabel','quizQuestionPanel','quizProgress','quizPhoto','quizChoices','quizResultPanel','quizResultBig','quizResultSummary','leaderboardList',
- 'resultTitle','resultSummary','rankList','newRoundBtn','resultWaitingNote'
+ 'resultTitle','resultSummary','resultSubStat','rankList','newRoundBtn','resultWaitingNote'
 ].forEach(id => els[id] = $(id));
 
 const TEAM_COLORS = ['#FF6B5B','#1F6F6B','#FFC94D','#6C63FF','#2FA4C9','#E85D9B'];
@@ -442,7 +469,7 @@ const SESSION_KEY = 'session';
 const CODE_RE = /^[A-Za-z0-9]{4,8}$/;
 
 function showOnly(screen){
-  ['roleScreen','hostSetupScreen','codeEntryScreen','registerScreen','lobbyScreen','teamSetupScreen','gameScreen','quizScreen','resultScreen']
+  ['roleScreen','hostSetupScreen','codeEntryScreen','registerScreen','lobbyScreen','scoreModeScreen','teamSetupScreen','gameScreen','quizScreen','resultScreen']
     .forEach(k => els[k].hidden = (els[k] !== screen));
 }
 function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
@@ -458,6 +485,8 @@ let roomCache = null, playersCache = [];
 let unsubRoom = null, unsubPlayers = null;
 let pendingPhoto = null;
 let localTeamCount = 2, localTeamNames = ['1팀','2팀'];
+let pendingMemoryMode = 'solo';
+let pendingScoreMode = 'attempts';
 let quizLocalLock = false;
 let matchedExistingPlayer = null; // for name-collision resume flow
 
@@ -760,20 +789,30 @@ els.teamMinus.addEventListener('click', ()=>{ if(localTeamCount>2){ localTeamCou
 els.teamPlus.addEventListener('click', ()=>{ if(localTeamCount<6){ localTeamCount++; setupTeamNameInputs(); } });
 els.backToLobbyFromTeamBtn.addEventListener('click', ()=> showOnly(els.lobbyScreen));
 
-els.soloModeBtn.addEventListener('click', ()=> startMemoryGame('solo'));
-els.teamModeBtn.addEventListener('click', ()=>{ setupTeamNameInputs(); showOnly(els.teamSetupScreen); });
+els.soloModeBtn.addEventListener('click', ()=>{ pendingMemoryMode = 'solo'; showOnly(els.scoreModeScreen); });
+els.teamModeBtn.addEventListener('click', ()=>{ pendingMemoryMode = 'team'; showOnly(els.scoreModeScreen); });
 els.quizModeBtn.addEventListener('click', ()=> startQuizMode());
-els.startTeamGameBtn.addEventListener('click', ()=> startMemoryGame('team'));
+els.backToLobbyFromScoreModeBtn.addEventListener('click', ()=> showOnly(els.lobbyScreen));
+els.scoreModeTimeBtn.addEventListener('click', ()=> chooseScoreMode('time'));
+els.scoreModeAttemptsBtn.addEventListener('click', ()=> chooseScoreMode('attempts'));
+els.startTeamGameBtn.addEventListener('click', ()=> startMemoryGame('team', pendingScoreMode));
 
-async function startMemoryGame(mode){
+function chooseScoreMode(scoreMode){
+  pendingScoreMode = scoreMode;
+  if(pendingMemoryMode === 'team'){ setupTeamNameInputs(); showOnly(els.teamSetupScreen); }
+  else{ startMemoryGame('solo', scoreMode); }
+}
+
+async function startMemoryGame(mode, scoreMode){
   if(playersCache.length < 4){ alert('최소 4명이 모여야 시작할 수 있어요.'); return; }
   const cards = [];
   playersCache.forEach(p=>{ cards.push({ pairId: p.id, type: 'photo' }); cards.push({ pairId: p.id, type: 'name' }); });
   shuffle(cards);
   const update = {
-    mode, cards, flippedIndices: [], mismatchAt: null,
+    mode, scoreMode: scoreMode || 'attempts', cards, flippedIndices: [], mismatchAt: null,
     moves: 0, matches: 0, totalPairs: playersCache.length,
-    status: 'playing', roundId: (roomCache.roundId || 0) + 1
+    status: 'playing', roundId: (roomCache.roundId || 0) + 1,
+    startedAt: Date.now(), finishedAt: null, boardCleared: false
   };
   if(mode === 'team'){
     update.teams = localTeamNames.slice(0, localTeamCount).map((n,i)=>({ name:n, color: TEAM_COLORS[i%TEAM_COLORS.length], score:0 }));
@@ -797,6 +836,17 @@ function renderGameBoard(){
   els.movesCount.textContent = roomCache.moves || 0;
   els.matchCount.textContent = roomCache.matches || 0;
   els.totalPairs.textContent = roomCache.totalPairs || 0;
+
+  const isTimeMode = roomCache.scoreMode === 'time';
+  els.movesStatBox.hidden = isTimeMode;
+  els.timeStatBox.hidden = !isTimeMode;
+  if(isTimeMode){
+    updateLiveTimer();
+    if(!liveTimerInterval && !roomCache.finishedAt) liveTimerInterval = setInterval(updateLiveTimer, 1000);
+    if(roomCache.finishedAt && liveTimerInterval){ clearInterval(liveTimerInterval); liveTimerInterval = null; }
+  } else if(liveTimerInterval){
+    clearInterval(liveTimerInterval); liveTimerInterval = null;
+  }
 
   if(roomCache.mode === 'team'){
     els.turnPill.hidden = false; els.teamScoreboard.hidden = false;
@@ -828,7 +878,31 @@ function renderGameBoard(){
     els.grid.appendChild(card);
   });
 
+  const cleared = !!roomCache.boardCleared;
+  els.revealResultsPanel.hidden = !cleared;
+  if(cleared){
+    const host = amHost();
+    els.revealResultsBtn.hidden = !host;
+    els.revealWaitingNote.hidden = host;
+  }
+
   maybeScheduleMismatchResolve();
+}
+els.revealResultsBtn.addEventListener('click', async ()=>{
+  await updateDoc(doc(db,'rooms',roomCode), { status: 'result' });
+});
+
+let liveTimerInterval = null;
+function formatDuration(ms){
+  const totalSec = Math.max(0, Math.floor(ms/1000));
+  const m = Math.floor(totalSec/60);
+  const s = totalSec % 60;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function updateLiveTimer(){
+  if(!roomCache || !roomCache.startedAt) return;
+  const end = roomCache.finishedAt || Date.now();
+  els.timeCount.textContent = formatDuration(end - roomCache.startedAt);
 }
 
 async function flipCard(idx){
@@ -859,7 +933,10 @@ async function flipCard(idx){
             teams[data.currentTeamIdx] = { ...teams[data.currentTeamIdx], score: teams[data.currentTeamIdx].score + 1 };
             update.teams = teams;
           }
-          if(update.matches === data.totalPairs) update.status = 'result';
+          if(update.matches === data.totalPairs){
+            update.boardCleared = true;
+            update.finishedAt = Date.now();
+          }
         } else {
           update.mismatchAt = Date.now();
         }
@@ -1003,25 +1080,38 @@ function renderResultScreen(){
   const host = amHost();
   els.newRoundBtn.hidden = !host;
   els.resultWaitingNote.hidden = host;
+  const elapsedMs = (roomCache.finishedAt && roomCache.startedAt) ? (roomCache.finishedAt - roomCache.startedAt) : null;
+  const isTimeMode = roomCache.scoreMode === 'time';
+
   if(roomCache.mode === 'team'){
     els.resultTitle.textContent = '🎊 게임 종료!';
     const teams = roomCache.teams || [];
     const sorted = [...teams].sort((a,b)=> b.score - a.score);
     const topScore = sorted.length ? sorted[0].score : 0;
     els.resultSummary.textContent = '팀별 결과예요.';
+    els.resultSubStat.textContent = isTimeMode
+      ? (elapsedMs !== null ? `전체 소요시간: ${formatDuration(elapsedMs)}` : '')
+      : `전체 시도 횟수: ${roomCache.moves}회`;
     els.rankList.hidden = false;
     els.rankList.innerHTML = sorted.map(t =>
       `<li class="${t.score===topScore?'first':''}"><span class="rank-name"><span class="team-dot" style="background:${t.color}"></span>${escapeHtml(t.name)}${t.score===topScore?' 🏆':''}</span><span>${t.score}쌍</span></li>`
     ).join('');
   } else {
     els.resultTitle.textContent = '🎊 모두 매칭 완료!';
-    els.resultSummary.textContent = `${roomCache.totalPairs}명을 ${roomCache.moves}번 만에 모두 맞췄어요!`;
+    if(isTimeMode && elapsedMs !== null){
+      els.resultSummary.textContent = `${roomCache.totalPairs}명을 ${formatDuration(elapsedMs)} 만에 모두 맞췄어요!`;
+      els.resultSubStat.textContent = `총 시도 횟수: ${roomCache.moves}회`;
+    } else {
+      els.resultSummary.textContent = `${roomCache.totalPairs}명을 ${roomCache.moves}번 만에 모두 맞췄어요!`;
+      els.resultSubStat.textContent = '';
+    }
   }
 }
 els.newRoundBtn.addEventListener('click', async ()=>{
   await updateDoc(doc(db,'rooms',roomCode), {
     status: 'lobby', mode: null, cards: [], flippedIndices: [], mismatchAt: null,
-    moves: 0, matches: 0, totalPairs: 0, teams: [], currentTeamIdx: 0
+    moves: 0, matches: 0, totalPairs: 0, teams: [], currentTeamIdx: 0,
+    scoreMode: null, startedAt: null, finishedAt: null, boardCleared: false
   });
 });
 
