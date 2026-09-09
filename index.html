@@ -229,6 +229,11 @@ input:focus{ border-color: var(--teal); }
           <div class="desc">받은 코드와 비밀번호를 입력해요.</div>
         </button>
       </div>
+      <button class="role-card" id="demoRoleBtn" style="width:100%; margin-top:14px; text-align:center;">
+        <span class="icon">🎮</span>
+        <div class="title">테스트 해보기</div>
+        <div class="desc">가짜 참가자 8명이 채워진 방을 자동으로 만들어서, 나만 등록하면 바로 체험할 수 있어요.</div>
+      </button>
     </div>
   </section>
 
@@ -414,7 +419,7 @@ const $ = (id)=> document.getElementById(id);
 const els = {};
 ['roleScreen','hostSetupScreen','codeEntryScreen','registerScreen','lobbyScreen','teamSetupScreen','gameScreen','quizScreen','resultScreen',
  'resumeBox','resumeAvatar','resumeAvatarFallback','resumeName','resumeExtra','resumeActions','resumeBtn','clearSessionBtn',
- 'createRoleBtn','joinRoleBtn',
+ 'createRoleBtn','joinRoleBtn','demoRoleBtn',
  'hostCodeInput','hostPasswordInput','hostParticipateCheckbox','hostSetupError','backFromHostSetupBtn','hostSetupNextBtn',
  'codeInput','joinPasswordInput','codeError','backFromCodeBtn','checkCodeBtn',
  'registerTitle','nameMatchBox','nameMatchText','claimExistingBtn','dismissClaimBtn',
@@ -427,6 +432,8 @@ const els = {};
 ].forEach(id => els[id] = $(id));
 
 const TEAM_COLORS = ['#FF6B5B','#1F6F6B','#FFC94D','#6C63FF','#2FA4C9','#E85D9B'];
+const DEMO_NAMES = ['민서','하늘','준영','다은','태호','유진','성민','아라','도현','지수','서준','예린'];
+const DEMO_COLORS = ['FF6B5B','1F6F6B','FFC94D','6C63FF','2FA4C9','E85D9B','8BC34A','FF9F43'];
 const SESSION_KEY = 'session';
 const CODE_RE = /^[A-Za-z0-9]{4,8}$/;
 
@@ -476,6 +483,53 @@ els.joinRoleBtn.addEventListener('click', ()=>{
   els.codeError.textContent = '';
   showOnly(els.codeEntryScreen);
 });
+els.demoRoleBtn.addEventListener('click', async ()=>{
+  els.demoRoleBtn.disabled = true;
+  const originalDesc = els.demoRoleBtn.querySelector('.desc').textContent;
+  els.demoRoleBtn.querySelector('.desc').textContent = '테스트 방을 만드는 중이에요...';
+  try{
+    await createDemoRoom();
+  }catch(e){
+    alert('테스트 방을 만드는 데 실패했어요. Firestore 규칙을 확인하고 다시 시도해주세요.');
+  }finally{
+    els.demoRoleBtn.disabled = false;
+    els.demoRoleBtn.querySelector('.desc').textContent = originalDesc;
+  }
+});
+async function createDemoRoom(){
+  let code = '';
+  for(let i=0;i<5;i++){
+    const candidate = 'DEMO' + Math.floor(10 + Math.random()*89);
+    const snap = await getDoc(doc(db,'rooms',candidate));
+    if(!snap.exists()){ code = candidate; break; }
+  }
+  if(!code) code = genCode();
+
+  await setDoc(doc(db,'rooms',code), {
+    status: 'lobby', mode: null, hostPlayerId: null, roundId: 0, password: 'demo',
+    cards: [], flippedIndices: [], mismatchAt: null,
+    moves: 0, matches: 0, totalPairs: 0, teams: [], currentTeamIdx: 0,
+    createdAt: Date.now()
+  });
+
+  const shuffledNames = [...DEMO_NAMES].sort(()=> Math.random()-0.5).slice(0, 8);
+  const baseTime = Date.now();
+  for(let i=0;i<shuffledNames.length;i++){
+    const name = shuffledNames[i];
+    const color = DEMO_COLORS[i % DEMO_COLORS.length];
+    const photo = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${color}&color=fff&size=128&bold=true`;
+    await setDoc(doc(db,'rooms',code,'players', genId()), {
+      name, photo, joinedAt: baseTime + i,
+      quizOrder: [], quizIndex: 0, quizScore: 0, quizFinished: false, quizRoundId: -1
+    });
+  }
+
+  roomCode = code;
+  pendingHostClaim = true;
+  els.registerTitle.textContent = '테스트 참가자로 등록하기 (내 사진으로 직접 참여)';
+  resetRegisterForm();
+  showOnly(els.registerScreen);
+}
 els.backFromHostSetupBtn.addEventListener('click', ()=> showOnly(els.roleScreen));
 els.backFromCodeBtn.addEventListener('click', ()=> showOnly(els.roleScreen));
 
