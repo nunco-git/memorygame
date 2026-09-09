@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>얼굴-이름 매칭 게임</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root{
+  --bg: #FFF6E4; --panel: #FFFFFF; --ink: #1B2430; --ink-soft: #5B6472;
+  --teal: #1F6F6B; --teal-deep: #144C49; --coral: #FF6B5B; --coral-deep: #E5503F;
+  --yellow: #FFC94D; --line: #E7DFC9; --radius-badge: 18px;
+}
+*{ box-sizing:border-box; }
+body{
+  margin:0; background: var(--bg);
+  background-image:
+    radial-gradient(circle at 10% 12%, rgba(255,201,77,0.35) 0, transparent 40%),
+    radial-gradient(circle at 92% 85%, rgba(31,111,107,0.18) 0, transparent 45%);
+  color: var(--ink); font-family: 'Inter', sans-serif; min-height: 100vh;
+}
+.wrap{ max-width: 880px; margin: 0 auto; padding: 40px 20px 80px; }
+header.hero{ text-align:center; margin-bottom: 30px; }
+.eyebrow-badge{
+  display:inline-flex; align-items:center; gap:8px; background: var(--teal); color:#fff;
+  font-family:'Baloo 2', sans-serif; font-weight:600; font-size:14px; padding:6px 16px;
+  border-radius: 999px; transform: rotate(-2deg); margin-bottom:18px;
+}
+h1{ font-family:'Baloo 2', sans-serif; font-weight:800; font-size: clamp(26px, 5vw, 40px); margin:0 0 8px; line-height:1.15; }
+h1 span{ color: var(--coral); }
+.sub{ color: var(--ink-soft); font-size:15px; max-width: 460px; margin: 0 auto; line-height:1.6; }
+
+.panel{ background: var(--panel); border: 1px solid var(--line); border-radius: 24px; padding: 26px; box-shadow: 0 2px 0 var(--line); }
+.panel + .panel{ margin-top:20px; }
+.panel h2{ font-family:'Baloo 2', sans-serif; font-size:19px; margin: 0 0 4px; }
+.panel .hint{ color: var(--ink-soft); font-size:13px; margin: 0 0 16px; line-height:1.5; }
+
+.role-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+@media (max-width:520px){ .role-grid{ grid-template-columns:1fr; } }
+.role-card{
+  background:#FBF9F1; border:2px solid var(--line); border-radius:18px; padding:22px 18px;
+  text-align:left; cursor:pointer; transition: border-color .15s ease, transform .1s ease;
+}
+.role-card:hover{ border-color: var(--teal); transform: translateY(-2px); }
+.role-card .icon{ font-size:26px; display:block; margin-bottom:8px; }
+.role-card .title{ font-family:'Baloo 2', sans-serif; font-weight:700; font-size:16px; margin-bottom:4px; }
+.role-card .desc{ font-size:13px; color: var(--ink-soft); }
+
+.resume-box{
+  background:#FBF9F1; border:1.5px solid var(--line); border-radius:16px; padding:16px 18px;
+  display:flex; align-items:center; gap:12px; margin-bottom:18px;
+}
+.resume-box img{ width:40px; height:40px; border-radius:50%; object-fit:cover; }
+.resume-box .info{ flex:1; font-size:13px; color: var(--ink-soft); }
+.resume-box .info b{ color: var(--ink); font-size:14px; }
+.link-btn{ background:none; border:none; color: var(--ink-soft); font-size:12.5px; text-decoration:underline; cursor:pointer; padding:0; }
+
+.field{ display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+.field label{ font-size:13px; font-weight:600; color: var(--ink-soft); }
+input[type=text], input[type=password]{
+  font-family:'Inter', sans-serif; font-size:15px; padding:11px 14px; border-radius:12px;
+  border:1.5px solid var(--line); outline:none; background:#FBF9F1; width:100%;
+}
+input.code-input{
+  font-family:'Baloo 2', sans-serif; font-size:22px; letter-spacing:6px; text-align:center; text-transform:uppercase;
+}
+input:focus{ border-color: var(--teal); }
+
+.btn{
+  font-family:'Baloo 2', sans-serif; font-weight:600; font-size:15px; border:none;
+  border-radius:12px; padding:11px 22px; cursor:pointer; transition: transform .1s ease;
+}
+.btn:active{ transform: translateY(1px); }
+.btn-primary{ background: var(--coral); color:#fff; }
+.btn-primary:hover{ background: var(--coral-deep); }
+.btn-primary:disabled{ background:#D8D2C0; cursor:not-allowed; }
+.btn-ghost{ background: transparent; color: var(--ink-soft); border:1.5px solid var(--line); }
+.btn-ghost:hover{ border-color: var(--teal); color: var(--teal); }
+.btn-full{ width:100%; font-size:16px; padding:13px 20px; }
+
+.photo-picker{
+  width:84px; height:84px; border-radius:50%; border:2px dashed var(--line); background: #FBF9F1;
+  display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden;
+  position:relative; margin: 0 auto 6px;
+}
+.photo-picker:hover{ border-color: var(--teal); }
+.photo-picker img{ width:100%; height:100%; object-fit:cover; }
+.photo-picker span{ font-size:26px; color: var(--ink-soft); }
+.photo-picker input{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+
+.error-text{ color: var(--coral-deep); font-size:13px; margin-top:8px; min-height:16px; }
+
+.resume-choice{
+  background:#FFF8E4; border:1.5px solid var(--yellow); border-radius:14px; padding:14px 16px; margin-bottom:16px;
+}
+.resume-choice p{ font-size:13.5px; margin:0 0 10px; color: var(--ink); }
+.resume-choice .row{ display:flex; gap:10px; }
+
+/* room code + qr */
+.room-code-box{ text-align:center; padding: 6px 0 18px; }
+.room-code-box .label{ font-size:13px; color: var(--ink-soft); margin-bottom:6px; }
+.room-code-box .code{ font-family:'Baloo 2', sans-serif; font-weight:800; font-size:36px; letter-spacing:8px; color: var(--teal-deep); }
+.room-code-box img.qr{ width:130px; height:130px; margin-top:12px; border-radius:12px; border:1px solid var(--line); }
+
+.player-list{ display:flex; flex-wrap:wrap; gap:12px; margin: 14px 0 6px; }
+.player-chip{
+  display:flex; align-items:center; gap:8px; background:#FBF9F1; border:1px solid var(--line);
+  border-radius:999px; padding:6px 14px 6px 6px;
+}
+.player-chip img{ width:32px; height:32px; border-radius:50%; object-fit:cover; }
+.player-chip span{ font-size:13px; font-weight:600; }
+.player-chip .host-tag{ font-size:11px; color: var(--coral-deep); font-weight:700; }
+.waiting-note{ color: var(--ink-soft); font-size:14px; text-align:center; padding: 10px 0; }
+
+.mode-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; margin-top:6px; }
+@media (max-width:640px){ .mode-grid{ grid-template-columns:1fr; } }
+.mode-card{
+  background:#FBF9F1; border:2px solid var(--line); border-radius:18px; padding:18px 16px;
+  text-align:left; cursor:pointer; transition: border-color .15s ease, transform .1s ease;
+}
+.mode-card:hover{ border-color: var(--teal); transform: translateY(-2px); }
+.mode-card .icon{ font-size:24px; display:block; margin-bottom:8px; }
+.mode-card .title{ font-family:'Baloo 2', sans-serif; font-weight:700; font-size:15px; margin-bottom:4px; }
+.mode-card .desc{ font-size:12.5px; color: var(--ink-soft); line-height:1.4; }
+
+.team-count-row{ display:flex; align-items:center; gap:14px; margin-bottom:18px; }
+.stepper{ display:flex; align-items:center; border:1.5px solid var(--line); border-radius:12px; overflow:hidden; }
+.stepper button{ width:38px; height:38px; border:none; background:#FBF9F1; font-size:18px; cursor:pointer; font-family:'Baloo 2', sans-serif; color: var(--teal-deep); }
+.stepper button:hover{ background: var(--yellow); }
+.stepper .count{ width:40px; text-align:center; font-family:'Baloo 2', sans-serif; font-weight:700; font-size:15px; }
+.team-name-list{ display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
+.team-name-row{ display:flex; align-items:center; gap:10px; }
+.team-dot{ width:14px; height:14px; border-radius:50%; flex-shrink:0; }
+.team-name-row input{ flex:1; }
+
+.game-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px; }
+.stats{ display:flex; gap:16px; font-family:'Baloo 2', sans-serif; font-size:14px; color: var(--teal-deep); }
+.stats b{ font-size:17px; }
+.room-tag{ font-size:12px; color: var(--ink-soft); background:#FBF9F1; border:1px solid var(--line); padding:4px 10px; border-radius:999px; }
+
+.turn-pill{ display:inline-flex; align-items:center; gap:8px; font-family:'Baloo 2', sans-serif; font-weight:700; font-size:14px; color:#fff; padding:9px 16px; border-radius:999px; margin-bottom:14px; }
+.team-scoreboard{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+.team-chip{ display:flex; align-items:center; gap:6px; border-radius:999px; padding:6px 12px; font-size:12.5px; font-weight:600; background:#FBF9F1; border:1.5px solid var(--line); }
+.team-chip .team-dot{ width:9px; height:9px; }
+.team-chip.active{ border-color: var(--ink); }
+
+.grid{ display:grid; gap:12px; grid-template-columns: repeat(var(--cols, 4), 1fr); }
+.card{ aspect-ratio: 3 / 4; perspective: 900px; cursor:pointer; }
+.card-inner{ position:relative; width:100%; height:100%; transform-style: preserve-3d; transition: transform .45s cubic-bezier(.2,.8,.3,1); }
+.card.flipped .card-inner, .card.matched .card-inner{ transform: rotateY(180deg); }
+.card-face{ position:absolute; inset:0; border-radius: var(--radius-badge); backface-visibility: hidden; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.card-back{ background: linear-gradient(155deg, var(--teal), var(--teal-deep)); border: 2px solid var(--teal-deep); }
+.card-back::after{ content:""; width:34%; height:34%; border-radius:50%; border: 3px solid rgba(255,255,255,.35); }
+.card-front{ background: #fff; border: 2px solid var(--line); transform: rotateY(180deg); flex-direction:column; padding:6%; }
+.card.matched .card-front{ border-color: var(--yellow); }
+.card-front img{ width:100%; height:72%; object-fit:cover; border-radius:10px; }
+.card-front .name-only{ font-family:'Baloo 2', sans-serif; font-weight:700; font-size: clamp(12px, 2.6vw, 17px); text-align:center; padding: 0 4px; }
+.card-front .caption{ margin-top:6%; font-size: clamp(10px, 2vw, 12px); font-weight:600; color: var(--ink-soft); text-align:center; }
+
+.quiz-progress{ font-family:'Baloo 2', sans-serif; font-size:14px; color: var(--ink-soft); margin-bottom:14px; }
+.quiz-photo-wrap{ display:flex; justify-content:center; margin-bottom:20px; }
+.quiz-photo{ width:180px; height:180px; border-radius:22px; object-fit:cover; border:3px solid var(--panel); box-shadow: 0 0 0 4px var(--teal); }
+.quiz-choices{ display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; }
+.choice-btn{
+  font-family:'Inter', sans-serif; font-weight:600; font-size:15px; padding:15px 10px; border-radius:14px;
+  border:2px solid var(--line); background:#FBF9F1; cursor:pointer; transition: all .12s ease;
+}
+.choice-btn:hover:not(:disabled){ border-color: var(--teal); }
+.choice-btn.correct{ background: var(--teal); border-color: var(--teal-deep); color:#fff; }
+.choice-btn.wrong{ background: var(--coral); border-color: var(--coral-deep); color:#fff; }
+@media (max-width:480px){ .quiz-choices{ grid-template-columns:1fr; } }
+
+.leaderboard{ list-style:none; padding:0; margin: 10px 0 0; display:flex; flex-direction:column; gap:8px; }
+.leaderboard li{ display:flex; align-items:center; justify-content:space-between; background:#FBF9F1; border:1.5px solid var(--line); border-radius:12px; padding:9px 14px; font-weight:600; font-size:14px; }
+.leaderboard li.first{ border-color: var(--yellow); background:#FFF8E4; }
+.leaderboard .who{ display:flex; align-items:center; gap:8px; }
+.leaderboard img{ width:26px; height:26px; border-radius:50%; object-fit:cover; }
+
+.win-panel{ text-align:center; padding: 34px 26px; }
+.win-panel .big{ font-family:'Baloo 2', sans-serif; font-size:24px; margin-bottom:6px; }
+.win-panel .sub{ margin-bottom:20px; }
+.rank-list{ list-style:none; padding:0; margin:0 0 22px; display:flex; flex-direction:column; gap:8px; max-width:320px; margin-left:auto; margin-right:auto; }
+.rank-list li{ display:flex; align-items:center; justify-content:space-between; background:#FBF9F1; border:1.5px solid var(--line); border-radius:12px; padding:10px 16px; font-weight:600; }
+.rank-list li.first{ border-color: var(--yellow); background:#FFF8E4; }
+.rank-list .rank-name{ display:flex; align-items:center; gap:8px; }
+
+[hidden]{ display:none !important; }
+@media (max-width:520px){ .grid{ grid-template-columns: repeat(var(--cols-mobile, 3), 1fr); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow-badge">🎉 첫 모임 아이스브레이커 · 실시간</div>
+    <h1>누가 <span>누구</span>일까요?</h1>
+    <p class="sub">각자 폰으로 참여해서 얼굴과 이름을 맞혀보세요.</p>
+  </header>
+
+  <!-- 0. 역할 선택 -->
+  <section id="roleScreen">
+    <div class="panel">
+      <div class="resume-box" id="resumeBox" hidden>
+        <img id="resumeAvatar">
+        <div class="info"><b id="resumeName"></b>님으로 방 <span id="resumeRoomCode"></span>에 참여 중이었어요.</div>
+      </div>
+      <div style="display:flex; gap:10px; margin-bottom:18px;" id="resumeActions" hidden>
+        <button class="btn btn-primary" id="resumeBtn" style="flex:1;">이어서 참여하기</button>
+        <button class="btn btn-ghost" id="clearSessionBtn">새로 시작</button>
+      </div>
+      <div class="role-grid">
+        <button class="role-card" id="createRoleBtn">
+          <span class="icon">🛠️</span>
+          <div class="title">방 만들기</div>
+          <div class="desc">새 방을 열고 코드·비밀번호를 공유해요.</div>
+        </button>
+        <button class="role-card" id="joinRoleBtn">
+          <span class="icon">🔑</span>
+          <div class="title">방 참여하기</div>
+          <div class="desc">받은 코드와 비밀번호를 입력해요.</div>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 0a. 호스트: 방 코드/비밀번호 설정 -->
+  <section id="hostSetupScreen" hidden>
+    <div class="panel">
+      <h2>방 설정</h2>
+      <p class="hint">코드는 참가자들과 공유할 값이에요. 원하는 값으로 바꿔도 돼요.</p>
+      <div class="field">
+        <label for="hostCodeInput">방 코드</label>
+        <input type="text" class="code-input" id="hostCodeInput" maxlength="8">
+      </div>
+      <div class="field">
+        <label for="hostPasswordInput">비밀번호</label>
+        <input type="text" id="hostPasswordInput" placeholder="참가자에게 알려줄 비밀번호" maxlength="20">
+      </div>
+      <div class="error-text" id="hostSetupError"></div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-ghost" id="backFromHostSetupBtn">← 뒤로</button>
+        <button class="btn btn-primary" id="hostSetupNextBtn" style="flex:1;">다음</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 0b. 참가자: 코드+비밀번호 입력 -->
+  <section id="codeEntryScreen" hidden>
+    <div class="panel">
+      <h2>방 참여하기</h2>
+      <p class="hint">공유받은 방 코드와 비밀번호를 입력해주세요.</p>
+      <div class="field">
+        <label for="codeInput">방 코드</label>
+        <input type="text" class="code-input" id="codeInput" maxlength="8" placeholder="CODE">
+      </div>
+      <div class="field">
+        <label for="joinPasswordInput">비밀번호</label>
+        <input type="text" id="joinPasswordInput" placeholder="비밀번호">
+      </div>
+      <div class="error-text" id="codeError"></div>
+      <div style="display:flex; gap:10px; margin-top:4px;">
+        <button class="btn btn-ghost" id="backFromCodeBtn">← 뒤로</button>
+        <button class="btn btn-primary" id="checkCodeBtn" style="flex:1;">확인</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1. 등록 (호스트/참가자 공통) -->
+  <section id="registerScreen" hidden>
+    <div class="panel">
+      <h2 id="registerTitle">참가자 등록</h2>
+      <p class="hint">내 사진을 찍거나 올리고 이름을 입력해주세요.</p>
+
+      <div class="resume-choice" id="nameMatchBox" hidden>
+        <p id="nameMatchText"></p>
+        <div class="row">
+          <button class="btn btn-primary" id="claimExistingBtn" style="flex:1;">이 이름으로 이어하기</button>
+          <button class="btn btn-ghost" id="dismissClaimBtn">새로 등록</button>
+        </div>
+      </div>
+
+      <label class="photo-picker" id="photoPicker">
+        <span id="photoPlaceholder">＋</span>
+        <img id="photoPreview" hidden>
+        <input type="file" accept="image/*" id="photoInput">
+      </label>
+      <div class="field" style="margin-top:14px;">
+        <label for="nameInput">이름</label>
+        <input type="text" id="nameInput" placeholder="예: 김지우" maxlength="20">
+      </div>
+      <div class="error-text" id="registerError"></div>
+      <button class="btn btn-primary btn-full" id="registerBtn">입장하기</button>
+    </div>
+  </section>
+
+  <!-- 2. 로비 -->
+  <section id="lobbyScreen" hidden>
+    <div class="panel room-code-box">
+      <div class="label">방 코드</div>
+      <div class="code" id="lobbyCode">0000</div>
+      <img class="qr" id="lobbyQr" alt="QR">
+    </div>
+    <div class="panel">
+      <h2>참가자 <span id="playerCount">0</span>명</h2>
+      <div class="player-list" id="playerList"></div>
+      <p class="waiting-note" id="waitingNote" hidden>호스트가 게임을 시작하길 기다리는 중이에요...</p>
+    </div>
+    <div class="panel" id="hostControls" hidden>
+      <h2>모드를 골라주세요</h2>
+      <p class="hint">최소 4명이 모이면 시작할 수 있어요.</p>
+      <div class="mode-grid">
+        <button class="mode-card" id="soloModeBtn"><span class="icon">🙋</span><div class="title">개인전</div><div class="desc">다같이 한 보드에서 카드를 맞혀요.</div></button>
+        <button class="mode-card" id="teamModeBtn"><span class="icon">🤝</span><div class="title">단체전</div><div class="desc">팀을 나눠 순서대로 도전해요.</div></button>
+        <button class="mode-card" id="quizModeBtn"><span class="icon">❓</span><div class="title">퀴즈형식</div><div class="desc">각자 자기 속도로 얼굴 맞히기 퀴즈를 풀어요.</div></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2b. 팀 설정 (호스트 전용) -->
+  <section id="teamSetupScreen" hidden>
+    <div class="panel">
+      <h2>팀 설정</h2>
+      <div class="team-count-row">
+        <span style="font-weight:600; font-size:14px; color:var(--ink-soft);">팀 수</span>
+        <div class="stepper">
+          <button type="button" id="teamMinus">－</button>
+          <div class="count" id="teamCountLabel">2</div>
+          <button type="button" id="teamPlus">＋</button>
+        </div>
+      </div>
+      <div class="team-name-list" id="teamNameList"></div>
+      <button class="btn btn-primary btn-full" id="startTeamGameBtn">단체전 시작</button>
+    </div>
+    <div class="panel"><button class="btn btn-ghost" id="backToLobbyFromTeamBtn">← 모드 다시 선택</button></div>
+  </section>
+
+  <!-- 3. 메모리 게임 보드 -->
+  <section id="gameScreen" hidden>
+    <div class="game-top">
+      <span class="room-tag" id="gameRoomTag">방 0000</span>
+      <div class="stats"><div>시도 <b id="movesCount">0</b></div><div>맞춘 짝 <b id="matchCount">0</b> / <span id="totalPairs">0</span></div></div>
+    </div>
+    <div id="turnPill" class="turn-pill" hidden></div>
+    <div id="teamScoreboard" class="team-scoreboard" hidden></div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- 3b. 퀴즈 -->
+  <section id="quizScreen" hidden>
+    <div class="game-top">
+      <span class="room-tag" id="quizRoomTag">방 0000</span>
+      <div class="stats"><div>맞은 개수 <b id="quizScoreLabel">0</b></div></div>
+    </div>
+    <div class="panel" id="quizQuestionPanel">
+      <div class="quiz-progress" id="quizProgress">1 / 10</div>
+      <div class="quiz-photo-wrap"><img class="quiz-photo" id="quizPhoto"></div>
+      <div class="quiz-choices" id="quizChoices"></div>
+    </div>
+    <div class="panel win-panel" id="quizResultPanel" hidden>
+      <div class="big">🎊 퀴즈 완료!</div>
+      <p class="sub" id="quizResultSummary"></p>
+      <h2 style="text-align:left; font-size:16px;">실시간 순위</h2>
+      <ul class="leaderboard" id="leaderboardList"></ul>
+    </div>
+  </section>
+
+  <!-- 4. 결과 (개인전/단체전) -->
+  <section id="resultScreen" hidden>
+    <div class="panel win-panel">
+      <div class="big" id="resultTitle">🎊 게임 종료!</div>
+      <p class="sub" id="resultSummary"></p>
+      <ul class="rank-list" id="rankList" hidden></ul>
+      <button class="btn btn-primary" id="newRoundBtn" hidden>새 라운드 시작</button>
+      <p class="waiting-note" id="resultWaitingNote" hidden>호스트가 새 라운드를 시작하길 기다리는 중이에요...</p>
+    </div>
+  </section>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, doc, setDoc, updateDoc, getDoc, onSnapshot,
+  collection, query, orderBy, where, getDocs, runTransaction
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDQNONhptDqCvEINzOirQB8wqGUZcVoR-E",
+  authDomain: "memorygame-5e365.firebaseapp.com",
+  projectId: "memorygame-5e365",
+  storageBucket: "memorygame-5e365.firebasestorage.app",
+  messagingSenderId: "388542336158",
+  appId: "1:388542336158:web:df6bfbdfae0c0930b43f8f",
+  measurementId: "G-8F4T1TKSYG"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const $ = (id)=> document.getElementById(id);
+const els = {};
+['roleScreen','hostSetupScreen','codeEntryScreen','registerScreen','lobbyScreen','teamSetupScreen','gameScreen','quizScreen','resultScreen',
+ 'resumeBox','resumeAvatar','resumeName','resumeRoomCode','resumeActions','resumeBtn','clearSessionBtn',
+ 'createRoleBtn','joinRoleBtn',
+ 'hostCodeInput','hostPasswordInput','hostSetupError','backFromHostSetupBtn','hostSetupNextBtn',
+ 'codeInput','joinPasswordInput','codeError','backFromCodeBtn','checkCodeBtn',
+ 'registerTitle','nameMatchBox','nameMatchText','claimExistingBtn','dismissClaimBtn',
+ 'photoPicker','photoInput','photoPreview','photoPlaceholder','nameInput','registerError','registerBtn',
+ 'lobbyCode','lobbyQr','playerCount','playerList','waitingNote','hostControls','soloModeBtn','teamModeBtn','quizModeBtn',
+ 'teamCountLabel','teamMinus','teamPlus','teamNameList','startTeamGameBtn','backToLobbyFromTeamBtn',
+ 'gameRoomTag','movesCount','matchCount','totalPairs','turnPill','teamScoreboard','grid',
+ 'quizRoomTag','quizScoreLabel','quizQuestionPanel','quizProgress','quizPhoto','quizChoices','quizResultPanel','quizResultSummary','leaderboardList',
+ 'resultTitle','resultSummary','rankList','newRoundBtn','resultWaitingNote'
+].forEach(id => els[id] = $(id));
+
+const TEAM_COLORS = ['#FF6B5B','#1F6F6B','#FFC94D','#6C63FF','#2FA4C9','#E85D9B'];
+const SESSION_KEY = 'session';
+const CODE_RE = /^[A-Za-z0-9]{4,8}$/;
+
+function showOnly(screen){
+  ['roleScreen','hostSetupScreen','codeEntryScreen','registerScreen','lobbyScreen','teamSetupScreen','gameScreen','quizScreen','resultScreen']
+    .forEach(k => els[k].hidden = (els[k] !== screen));
+}
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
+function genCode(){ return String(Math.floor(1000 + Math.random()*9000)); }
+function genId(){ return (crypto.randomUUID ? crypto.randomUUID() : 'p-' + Date.now() + '-' + Math.random().toString(16).slice(2)); }
+
+// ---- app state ----
+let roomCode = null, playerId = null;
+let pendingPassword = null; // used only while creating a room
+let roomCache = null, playersCache = [];
+let unsubRoom = null, unsubPlayers = null;
+let pendingPhoto = null;
+let localTeamCount = 2, localTeamNames = ['1팀','2팀'];
+let quizLocalLock = false;
+let matchedExistingPlayer = null; // for name-collision resume flow
+
+function amHost(){ return !!(roomCache && playerId && roomCache.hostPlayerId === playerId); }
+
+async function saveSession(){
+  try{ await window.storage.set(SESSION_KEY, JSON.stringify({ roomCode, playerId }), false); }catch(e){}
+}
+async function clearSession(){
+  try{ await window.storage.delete(SESSION_KEY, false); }catch(e){}
+}
+
+// ---- role select ----
+els.createRoleBtn.addEventListener('click', ()=>{
+  els.hostCodeInput.value = genCode();
+  els.hostPasswordInput.value = '';
+  els.hostSetupError.textContent = '';
+  showOnly(els.hostSetupScreen);
+});
+els.joinRoleBtn.addEventListener('click', ()=>{
+  els.codeInput.value = '';
+  els.joinPasswordInput.value = '';
+  els.codeError.textContent = '';
+  showOnly(els.codeEntryScreen);
+});
+els.backFromHostSetupBtn.addEventListener('click', ()=> showOnly(els.roleScreen));
+els.backFromCodeBtn.addEventListener('click', ()=> showOnly(els.roleScreen));
+
+els.hostSetupNextBtn.addEventListener('click', async ()=>{
+  const code = els.hostCodeInput.value.trim().toUpperCase();
+  const password = els.hostPasswordInput.value;
+  if(!CODE_RE.test(code)){ els.hostSetupError.textContent = '코드는 영문/숫자 4~8자로 입력해주세요.'; return; }
+  if(!password){ els.hostSetupError.textContent = '비밀번호를 입력해주세요.'; return; }
+  els.hostSetupNextBtn.disabled = true;
+  try{
+    const snap = await getDoc(doc(db, 'rooms', code));
+    if(snap.exists()){ els.hostSetupError.textContent = '이미 사용 중인 코드예요. 다른 코드를 입력해주세요.'; return; }
+    roomCode = code; pendingPassword = password;
+    els.registerTitle.textContent = '호스트로 등록하기';
+    resetRegisterForm();
+    showOnly(els.registerScreen);
+  }catch(e){
+    els.hostSetupError.textContent = '연결에 실패했어요. Firestore 규칙을 확인해주세요.';
+  }finally{
+    els.hostSetupNextBtn.disabled = false;
+  }
+});
+
+els.checkCodeBtn.addEventListener('click', async ()=>{
+  const code = els.codeInput.value.trim().toUpperCase();
+  const password = els.joinPasswordInput.value;
+  if(!CODE_RE.test(code)){ els.codeError.textContent = '방 코드를 정확히 입력해주세요.'; return; }
+  if(!password){ els.codeError.textContent = '비밀번호를 입력해주세요.'; return; }
+  els.checkCodeBtn.disabled = true;
+  try{
+    const snap = await getDoc(doc(db, 'rooms', code));
+    if(!snap.exists()){ els.codeError.textContent = '존재하지 않는 방 코드예요.'; return; }
+    if(snap.data().password !== password){ els.codeError.textContent = '비밀번호가 틀렸어요.'; return; }
+    roomCode = code; pendingPassword = null;
+    els.registerTitle.textContent = '참가자 등록';
+    resetRegisterForm();
+    showOnly(els.registerScreen);
+  }catch(e){
+    els.codeError.textContent = '연결에 실패했어요. Firestore 규칙을 확인해주세요.';
+  }finally{
+    els.checkCodeBtn.disabled = false;
+  }
+});
+
+// deep link ?room=CODE -> prefill join code (still needs password)
+const urlRoom = new URLSearchParams(location.search).get('room');
+
+// ---- register (photo + name) ----
+function resetRegisterForm(){
+  pendingPhoto = null; matchedExistingPlayer = null;
+  els.photoPreview.hidden = true; els.photoPreview.src = '';
+  els.photoPlaceholder.hidden = false; els.photoInput.value = '';
+  els.nameInput.value = ''; els.registerError.textContent = '';
+  els.nameMatchBox.hidden = true;
+}
+function downscale(dataUrl, maxSize, quality){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      let {width, height} = img;
+      if(width > height && width > maxSize){ height *= maxSize/width; width = maxSize; }
+      else if(height > maxSize){ width *= maxSize/height; height = maxSize; }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataUrl;
+  });
+}
+els.photoPicker.addEventListener('click', (e)=>{ if(e.target !== els.photoInput) els.photoInput.click(); });
+els.photoInput.addEventListener('change', async ()=>{
+  const file = els.photoInput.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async ()=>{
+    const small = await downscale(reader.result, 180, 0.75);
+    pendingPhoto = small;
+    els.photoPreview.src = small; els.photoPreview.hidden = false; els.photoPlaceholder.hidden = true;
+  };
+  reader.readAsDataURL(file);
+});
+
+els.nameInput.addEventListener('blur', checkNameMatch);
+async function checkNameMatch(){
+  const name = els.nameInput.value.trim();
+  matchedExistingPlayer = null;
+  els.nameMatchBox.hidden = true;
+  if(!name || !roomCode) return;
+  try{
+    const q = query(collection(db, 'rooms', roomCode, 'players'), where('name', '==', name));
+    const snap = await getDocs(q);
+    if(!snap.empty){
+      const d = snap.docs[0];
+      matchedExistingPlayer = { id: d.id, ...d.data() };
+      els.nameMatchText.textContent = `"${name}" 이름으로 이미 등록된 참가자가 있어요. 본인이 맞나요?`;
+      els.nameMatchBox.hidden = false;
+    }
+  }catch(e){ /* ignore lookup errors, proceed as normal registration */ }
+}
+els.claimExistingBtn.addEventListener('click', async ()=>{
+  if(!matchedExistingPlayer) return;
+  playerId = matchedExistingPlayer.id;
+  await enterRoomAsPlayer(false);
+});
+els.dismissClaimBtn.addEventListener('click', ()=>{
+  matchedExistingPlayer = null;
+  els.nameMatchBox.hidden = true;
+});
+
+els.registerBtn.addEventListener('click', async ()=>{
+  const name = els.nameInput.value.trim();
+  if(!name){ els.registerError.textContent = '이름을 입력해주세요.'; return; }
+  if(!pendingPhoto){ els.registerError.textContent = '사진을 등록해주세요.'; return; }
+  if(matchedExistingPlayer){ els.registerError.textContent = '위 안내를 확인해주세요.'; return; }
+  els.registerBtn.disabled = true;
+  els.registerError.textContent = '';
+  try{
+    playerId = genId();
+    await enterRoomAsPlayer(true, name);
+  }catch(e){
+    els.registerError.textContent = '입장에 실패했어요. Firestore 규칙을 확인해주세요.';
+  }finally{
+    els.registerBtn.disabled = false;
+  }
+});
+
+async function enterRoomAsPlayer(isNewPlayer, name){
+  if(pendingPassword !== null){
+    // creating a brand new room (host)
+    await setDoc(doc(db, 'rooms', roomCode), {
+      status: 'lobby', mode: null, hostPlayerId: playerId, roundId: 0, password: pendingPassword,
+      cards: [], flippedIndices: [], mismatchAt: null,
+      moves: 0, matches: 0, totalPairs: 0, teams: [], currentTeamIdx: 0,
+      createdAt: Date.now()
+    });
+  }
+  if(isNewPlayer){
+    await setDoc(doc(db, 'rooms', roomCode, 'players', playerId), {
+      name, photo: pendingPhoto, joinedAt: Date.now(),
+      quizOrder: [], quizIndex: 0, quizScore: 0, quizFinished: false, quizRoundId: -1
+    });
+  } else if(pendingPhoto){
+    // resumed as existing player with a fresh photo
+    await updateDoc(doc(db, 'rooms', roomCode, 'players', playerId), { photo: pendingPhoto });
+  }
+  saveSession();
+  subscribeRoom();
+  subscribePlayers();
+}
+
+// ---- subscriptions ----
+function subscribeRoom(){
+  if(unsubRoom) unsubRoom();
+  unsubRoom = onSnapshot(doc(db, 'rooms', roomCode), (snap)=>{
+    if(!snap.exists()) return;
+    roomCache = snap.data();
+    renderFromRoom();
+  });
+}
+function subscribePlayers(){
+  if(unsubPlayers) unsubPlayers();
+  const q = query(collection(db, 'rooms', roomCode, 'players'), orderBy('joinedAt', 'asc'));
+  unsubPlayers = onSnapshot(q, (snap)=>{
+    playersCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if(roomCache && roomCache.status === 'lobby') renderLobby();
+    if(roomCache && roomCache.status === 'playing' && roomCache.mode === 'quiz') renderQuizLeaderboardMaybe();
+    if(roomCache && roomCache.status === 'result') renderResultScreen();
+  });
+}
+
+function renderFromRoom(){
+  if(!roomCache) return;
+  if(roomCache.status === 'lobby'){ renderLobby(); showOnly(els.lobbyScreen); }
+  else if(roomCache.status === 'playing'){
+    if(roomCache.mode === 'quiz'){ showOnly(els.quizScreen); ensureQuizStarted(); }
+    else { showOnly(els.gameScreen); renderGameBoard(); }
+  }
+  else if(roomCache.status === 'result'){ showOnly(els.resultScreen); renderResultScreen(); }
+}
+
+// ---- lobby ----
+function renderLobby(){
+  els.lobbyCode.textContent = roomCode;
+  const link = location.origin + location.pathname + '?room=' + roomCode;
+  els.lobbyQr.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(link);
+  els.playerCount.textContent = playersCache.length;
+  els.playerList.innerHTML = playersCache.map(p =>
+    `<div class="player-chip"><img src="${p.photo}"><span>${escapeHtml(p.name)}</span>${p.id === roomCache.hostPlayerId ? '<span class="host-tag">HOST</span>' : ''}</div>`
+  ).join('');
+  const host = amHost();
+  els.hostControls.hidden = !host;
+  els.waitingNote.hidden = host;
+}
+
+function setupTeamNameInputs(){
+  els.teamCountLabel.textContent = localTeamCount;
+  while(localTeamNames.length < localTeamCount) localTeamNames.push(`${localTeamNames.length+1}팀`);
+  localTeamNames = localTeamNames.slice(0, localTeamCount);
+  els.teamNameList.innerHTML = '';
+  for(let i=0;i<localTeamCount;i++){
+    const row = document.createElement('div'); row.className = 'team-name-row';
+    row.innerHTML = `<span class="team-dot" style="background:${TEAM_COLORS[i % TEAM_COLORS.length]}"></span>`;
+    const input = document.createElement('input'); input.type='text'; input.maxLength=14; input.value = localTeamNames[i];
+    input.addEventListener('input', ()=> localTeamNames[i] = input.value.trim() || `${i+1}팀`);
+    row.appendChild(input); els.teamNameList.appendChild(row);
+  }
+}
+els.teamMinus.addEventListener('click', ()=>{ if(localTeamCount>2){ localTeamCount--; setupTeamNameInputs(); } });
+els.teamPlus.addEventListener('click', ()=>{ if(localTeamCount<6){ localTeamCount++; setupTeamNameInputs(); } });
+els.backToLobbyFromTeamBtn.addEventListener('click', ()=> showOnly(els.lobbyScreen));
+
+els.soloModeBtn.addEventListener('click', ()=> startMemoryGame('solo'));
+els.teamModeBtn.addEventListener('click', ()=>{ setupTeamNameInputs(); showOnly(els.teamSetupScreen); });
+els.quizModeBtn.addEventListener('click', ()=> startQuizMode());
+els.startTeamGameBtn.addEventListener('click', ()=> startMemoryGame('team'));
+
+async function startMemoryGame(mode){
+  if(playersCache.length < 4){ alert('최소 4명이 모여야 시작할 수 있어요.'); return; }
+  const cards = [];
+  playersCache.forEach(p=>{ cards.push({ pairId: p.id, type: 'photo' }); cards.push({ pairId: p.id, type: 'name' }); });
+  shuffle(cards);
+  const update = {
+    mode, cards, flippedIndices: [], mismatchAt: null,
+    moves: 0, matches: 0, totalPairs: playersCache.length,
+    status: 'playing', roundId: (roomCache.roundId || 0) + 1
+  };
+  if(mode === 'team'){
+    update.teams = localTeamNames.slice(0, localTeamCount).map((n,i)=>({ name:n, color: TEAM_COLORS[i%TEAM_COLORS.length], score:0 }));
+    update.currentTeamIdx = 0;
+  } else {
+    update.teams = []; update.currentTeamIdx = 0;
+  }
+  await updateDoc(doc(db,'rooms',roomCode), update);
+}
+async function startQuizMode(){
+  if(playersCache.length < 4){ alert('최소 4명이 모여야 시작할 수 있어요.'); return; }
+  await updateDoc(doc(db,'rooms',roomCode), { mode:'quiz', status:'playing', roundId:(roomCache.roundId||0)+1 });
+}
+
+// ---- memory board rendering ----
+function personById(id){ return playersCache.find(p => p.id === id); }
+
+function renderGameBoard(){
+  els.gameRoomTag.textContent = '방 ' + roomCode;
+  const cards = roomCache.cards || [];
+  els.movesCount.textContent = roomCache.moves || 0;
+  els.matchCount.textContent = roomCache.matches || 0;
+  els.totalPairs.textContent = roomCache.totalPairs || 0;
+
+  if(roomCache.mode === 'team'){
+    els.turnPill.hidden = false; els.teamScoreboard.hidden = false;
+    const teams = roomCache.teams || [];
+    const t = teams[roomCache.currentTeamIdx] || teams[0];
+    if(t){ els.turnPill.style.background = t.color; els.turnPill.textContent = `🎯 지금은 "${t.name}" 차례예요`; }
+    els.teamScoreboard.innerHTML = teams.map((tm,i)=>
+      `<div class="team-chip ${i===roomCache.currentTeamIdx?'active':''}"><span class="team-dot" style="background:${tm.color}"></span>${escapeHtml(tm.name)} · ${tm.score}</div>`
+    ).join('');
+  } else {
+    els.turnPill.hidden = true; els.teamScoreboard.hidden = true;
+  }
+
+  const cols = cards.length <= 12 ? 4 : cards.length <= 20 ? 5 : 6;
+  els.grid.style.setProperty('--cols', Math.min(cols,5));
+  els.grid.style.setProperty('--cols-mobile', 3);
+
+  els.grid.innerHTML = '';
+  cards.forEach((c, idx)=>{
+    const person = personById(c.pairId);
+    if(!person) return;
+    const card = document.createElement('div');
+    card.className = 'card' + (c.flipped ? ' flipped' : '') + (c.matched ? ' matched' : '');
+    const front = c.type === 'photo'
+      ? `<img src="${person.photo}"><div class="caption">${escapeHtml(person.name)}</div>`
+      : `<div class="name-only">${escapeHtml(person.name)}</div>`;
+    card.innerHTML = `<div class="card-inner"><div class="card-face card-back"></div><div class="card-face card-front">${front}</div></div>`;
+    card.addEventListener('click', ()=> flipCard(idx));
+    els.grid.appendChild(card);
+  });
+
+  maybeScheduleMismatchResolve();
+}
+
+async function flipCard(idx){
+  try{
+    await runTransaction(db, async (tx)=>{
+      const ref = doc(db,'rooms',roomCode);
+      const snap = await tx.get(ref);
+      const data = snap.data();
+      if(data.status !== 'playing') return;
+      const cards = data.cards.slice();
+      const flippedIdx = (data.flippedIndices || []).slice();
+      const card = cards[idx];
+      if(!card || card.matched || card.flipped || flippedIdx.length >= 2) return;
+
+      card.flipped = true;
+      flippedIdx.push(idx);
+      const update = { cards, flippedIndices: flippedIdx };
+
+      if(flippedIdx.length === 2){
+        update.moves = (data.moves || 0) + 1;
+        const [i1, i2] = flippedIdx;
+        if(cards[i1].pairId === cards[i2].pairId){
+          cards[i1].matched = true; cards[i2].matched = true;
+          update.matches = (data.matches || 0) + 1;
+          update.flippedIndices = [];
+          if(data.mode === 'team'){
+            const teams = data.teams.slice();
+            teams[data.currentTeamIdx] = { ...teams[data.currentTeamIdx], score: teams[data.currentTeamIdx].score + 1 };
+            update.teams = teams;
+          }
+          if(update.matches === data.totalPairs) update.status = 'result';
+        } else {
+          update.mismatchAt = Date.now();
+        }
+      }
+      tx.update(ref, update);
+    });
+  }catch(e){ /* transaction conflict, ignore - state will resync via listener */ }
+}
+
+let mismatchTimer = null;
+function maybeScheduleMismatchResolve(){
+  if(mismatchTimer){ clearTimeout(mismatchTimer); mismatchTimer = null; }
+  const flippedIdx = roomCache.flippedIndices || [];
+  if(flippedIdx.length === 2 && roomCache.mismatchAt){
+    const elapsed = Date.now() - roomCache.mismatchAt;
+    const wait = Math.max(0, 900 - elapsed);
+    mismatchTimer = setTimeout(resolveMismatch, wait);
+  }
+}
+async function resolveMismatch(){
+  try{
+    await runTransaction(db, async (tx)=>{
+      const ref = doc(db,'rooms',roomCode);
+      const snap = await tx.get(ref);
+      const data = snap.data();
+      const flippedIdx = data.flippedIndices || [];
+      if(flippedIdx.length !== 2 || !data.mismatchAt) return;
+      const cards = data.cards.slice();
+      const [i1, i2] = flippedIdx;
+      if(cards[i1].matched || cards[i2].matched) return;
+      cards[i1] = { ...cards[i1], flipped: false };
+      cards[i2] = { ...cards[i2], flipped: false };
+      const update = { cards, flippedIndices: [], mismatchAt: null };
+      if(data.mode === 'team' && data.teams && data.teams.length){
+        update.currentTeamIdx = (data.currentTeamIdx + 1) % data.teams.length;
+      }
+      tx.update(ref, update);
+    });
+  }catch(e){}
+}
+
+// ---- quiz ----
+function ensureQuizStarted(){
+  els.quizRoomTag.textContent = '방 ' + roomCode;
+  const me = playersCache.find(p => p.id === playerId);
+  if(!me) return;
+  if(me.quizRoundId !== roomCache.roundId){
+    const others = playersCache.map(p => p.id);
+    const order = shuffle(others);
+    updateDoc(doc(db,'rooms',roomCode,'players',playerId), {
+      quizOrder: order, quizIndex: 0, quizScore: 0, quizFinished: false, quizRoundId: roomCache.roundId
+    });
+    return; // will re-render on next players snapshot
+  }
+  if(me.quizFinished) renderQuizResult(me);
+  else renderQuizQuestion(me);
+}
+function renderQuizLeaderboardMaybe(){
+  const me = playersCache.find(p => p.id === playerId);
+  if(!me || !roomCache) return;
+  if(roomCache.mode !== 'quiz' || roomCache.status !== 'playing') return;
+  if(me.quizRoundId !== roomCache.roundId) return;
+  if(me.quizFinished) renderQuizResult(me);
+  else renderQuizQuestion(me);
+}
+function renderQuizQuestion(me){
+  quizLocalLock = false;
+  els.quizQuestionPanel.hidden = false; els.quizResultPanel.hidden = true;
+  els.quizScoreLabel.textContent = me.quizScore;
+  const order = me.quizOrder || [];
+  els.quizProgress.textContent = `${Math.min(me.quizIndex+1, order.length)} / ${order.length}`;
+  const targetId = order[me.quizIndex];
+  const person = personById(targetId);
+  if(!person) return;
+  els.quizPhoto.src = person.photo;
+
+  const others = playersCache.filter(p => p.id !== person.id);
+  shuffle(others);
+  const distractors = others.slice(0, Math.min(3, others.length));
+  const choices = shuffle([person, ...distractors]);
+
+  els.quizChoices.innerHTML = '';
+  choices.forEach(choice=>{
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn'; btn.textContent = choice.name;
+    btn.addEventListener('click', ()=> handleQuizAnswer(btn, choice.id === person.id, me));
+    els.quizChoices.appendChild(btn);
+  });
+}
+async function handleQuizAnswer(btn, correct, me){
+  if(quizLocalLock) return;
+  quizLocalLock = true;
+  document.querySelectorAll('.choice-btn').forEach(b=> b.disabled = true);
+  const person = personById((me.quizOrder||[])[me.quizIndex]);
+  if(correct){ btn.classList.add('correct'); }
+  else{
+    btn.classList.add('wrong');
+    document.querySelectorAll('.choice-btn').forEach(b=>{ if(person && b.textContent === person.name) b.classList.add('correct'); });
+  }
+  const nextIndex = me.quizIndex + 1;
+  const nextScore = me.quizScore + (correct ? 1 : 0);
+  const finished = nextIndex >= (me.quizOrder||[]).length;
+  setTimeout(async ()=>{
+    await updateDoc(doc(db,'rooms',roomCode,'players',playerId), {
+      quizIndex: nextIndex, quizScore: nextScore, quizFinished: finished
+    });
+  }, 850);
+}
+function renderQuizResult(me){
+  els.quizQuestionPanel.hidden = true; els.quizResultPanel.hidden = false;
+  const total = (me.quizOrder||[]).length || 1;
+  const pct = Math.round((me.quizScore/total)*100);
+  els.quizResultSummary.textContent = `${total}문제 중 ${me.quizScore}개 맞혔어요! (${pct}%)`;
+  const finishedRound = playersCache.filter(p => p.quizRoundId === roomCache.roundId);
+  const sorted = [...finishedRound].sort((a,b)=> b.quizScore - a.quizScore);
+  const topScore = sorted.length ? sorted[0].quizScore : 0;
+  els.leaderboardList.innerHTML = sorted.map(p =>
+    `<li class="${p.quizScore===topScore && p.quizFinished ? 'first':''}">
+      <span class="who"><img src="${p.photo}">${escapeHtml(p.name)}${p.quizFinished ? '':' (진행중)'}</span>
+      <span>${p.quizScore}점</span>
+    </li>`).join('');
+}
+
+// ---- result screen (solo/team) ----
+function renderResultScreen(){
+  if(!roomCache) return;
+  els.rankList.hidden = true;
+  const host = amHost();
+  els.newRoundBtn.hidden = !host;
+  els.resultWaitingNote.hidden = host;
+  if(roomCache.mode === 'team'){
+    els.resultTitle.textContent = '🎊 게임 종료!';
+    const teams = roomCache.teams || [];
+    const sorted = [...teams].sort((a,b)=> b.score - a.score);
+    const topScore = sorted.length ? sorted[0].score : 0;
+    els.resultSummary.textContent = '팀별 결과예요.';
+    els.rankList.hidden = false;
+    els.rankList.innerHTML = sorted.map(t =>
+      `<li class="${t.score===topScore?'first':''}"><span class="rank-name"><span class="team-dot" style="background:${t.color}"></span>${escapeHtml(t.name)}${t.score===topScore?' 🏆':''}</span><span>${t.score}쌍</span></li>`
+    ).join('');
+  } else {
+    els.resultTitle.textContent = '🎊 모두 매칭 완료!';
+    els.resultSummary.textContent = `${roomCache.totalPairs}명을 ${roomCache.moves}번 만에 모두 맞췄어요!`;
+  }
+}
+els.newRoundBtn.addEventListener('click', async ()=>{
+  await updateDoc(doc(db,'rooms',roomCode), {
+    status: 'lobby', mode: null, cards: [], flippedIndices: [], mismatchAt: null,
+    moves: 0, matches: 0, totalPairs: 0, teams: [], currentTeamIdx: 0
+  });
+});
+
+// ---- resume previous session ----
+els.resumeBtn.addEventListener('click', async ()=>{
+  els.resumeBtn.disabled = true;
+  await resumeSession(window.__savedSession);
+});
+els.clearSessionBtn.addEventListener('click', async ()=>{
+  await clearSession();
+  els.resumeBox.hidden = true; els.resumeActions.hidden = true;
+  window.__savedSession = null;
+  afterSessionCheck();
+});
+
+async function resumeSession(saved){
+  try{
+    roomCode = saved.roomCode; playerId = saved.playerId;
+    const [roomSnap, playerSnap] = await Promise.all([
+      getDoc(doc(db,'rooms',roomCode)),
+      getDoc(doc(db,'rooms',roomCode,'players',playerId))
+    ]);
+    if(!roomSnap.exists() || !playerSnap.exists()){
+      await clearSession();
+      showOnly(els.roleScreen);
+      return;
+    }
+    roomCache = roomSnap.data();
+    subscribeRoom(); subscribePlayers();
+  }catch(e){
+    showOnly(els.roleScreen);
+  }
+}
+
+async function afterSessionCheck(){
+  let saved = null;
+  try{
+    const res = await window.storage.get(SESSION_KEY, false);
+    if(res && res.value) saved = JSON.parse(res.value);
+  }catch(e){}
+
+  if(saved && saved.roomCode && saved.playerId){
+    window.__savedSession = saved;
+    try{
+      const [roomSnap, playerSnap] = await Promise.all([
+        getDoc(doc(db,'rooms',saved.roomCode)),
+        getDoc(doc(db,'rooms',saved.roomCode,'players',saved.playerId))
+      ]);
+      if(roomSnap.exists() && playerSnap.exists()){
+        const p = playerSnap.data();
+        els.resumeAvatar.src = p.photo;
+        els.resumeName.textContent = p.name;
+        els.resumeRoomCode.textContent = saved.roomCode;
+        els.resumeBox.hidden = false;
+        els.resumeActions.hidden = false;
+        showOnly(els.roleScreen);
+        return;
+      }
+    }catch(e){}
+  }
+
+  // no valid session — handle deep link or plain role screen
+  if(urlRoom && CODE_RE.test(urlRoom)){
+    els.codeInput.value = urlRoom.toUpperCase();
+    els.joinPasswordInput.value = '';
+    showOnly(els.codeEntryScreen);
+  } else {
+    showOnly(els.roleScreen);
+  }
+}
+afterSessionCheck();
+</script>
+</body>
+</html>
