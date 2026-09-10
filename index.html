@@ -163,6 +163,7 @@ input:focus{ border-color: var(--teal); }
 .card.matched .card-front{ border-color: var(--yellow); }
 .card-front img{ width:100%; height:72%; object-fit:cover; border-radius:10px; }
 .card-front .name-only{ font-family:'Baloo 2', sans-serif; font-weight:700; font-size: clamp(12px, 2.6vw, 17px); text-align:center; padding: 0 4px; }
+.card-front .cat-tag{ display:block; font-family:'Inter', sans-serif; font-weight:600; font-size:11px; color: var(--ink-soft); margin-bottom:4px; }
 .card-front .caption{ margin-top:6%; font-size: clamp(10px, 2vw, 12px); font-weight:600; color: var(--ink-soft); text-align:center; }
 
 .quiz-progress{ font-family:'Baloo 2', sans-serif; font-size:14px; color: var(--ink-soft); margin-bottom:14px; }
@@ -255,6 +256,19 @@ input:focus{ border-color: var(--teal); }
         <input type="checkbox" id="hostParticipateCheckbox" checked>
         <label for="hostParticipateCheckbox">저도 참가자로 게임에 참여할게요 (끄면 진행만 하는 관리자가 돼요)</label>
       </div>
+      <p class="hint" style="margin:8px 0 6px;">참가자에게 추가로 물어볼 항목 이름을 정해주세요 (매칭 카드로 쓰여요). 비워두면 그 항목은 안 써요.</p>
+      <div class="field">
+        <label for="customField1Input">추가 항목 1</label>
+        <input type="text" id="customField1Input" placeholder="예: 소지품" maxlength="12" value="소지품">
+      </div>
+      <div class="field">
+        <label for="customField2Input">추가 항목 2</label>
+        <input type="text" id="customField2Input" placeholder="예: 좋아하는 음식" maxlength="12" value="좋아하는 음식">
+      </div>
+      <div class="field">
+        <label for="customField3Input">추가 항목 3</label>
+        <input type="text" id="customField3Input" placeholder="예: 취미" maxlength="12" value="취미">
+      </div>
       <div class="error-text" id="hostSetupError"></div>
       <div style="display:flex; gap:10px;">
         <button class="btn btn-ghost" id="backFromHostSetupBtn">← 뒤로</button>
@@ -307,6 +321,19 @@ input:focus{ border-color: var(--teal); }
         <label for="nameInput">이름</label>
         <input type="text" id="nameInput" placeholder="예: 김지우" maxlength="20">
       </div>
+      <p class="hint" id="extraFieldsHint" style="margin:-6px 0 10px;">아래는 선택 입력이에요. 나중에 매칭 카드로 쓰일 수 있어요.</p>
+      <div class="field" id="extra1Field">
+        <label for="extra1Input" id="extra1Label">소지품 (선택)</label>
+        <input type="text" id="extra1Input" placeholder="입력해주세요" maxlength="30">
+      </div>
+      <div class="field" id="extra2Field">
+        <label for="extra2Input" id="extra2Label">좋아하는 음식 (선택)</label>
+        <input type="text" id="extra2Input" placeholder="입력해주세요" maxlength="30">
+      </div>
+      <div class="field" id="extra3Field">
+        <label for="extra3Input" id="extra3Label">취미 (선택)</label>
+        <input type="text" id="extra3Input" placeholder="입력해주세요" maxlength="30">
+      </div>
       <div class="error-text" id="registerError"></div>
       <button class="btn btn-primary btn-full" id="registerBtn">입장하기</button>
     </div>
@@ -333,11 +360,41 @@ input:focus{ border-color: var(--teal); }
         <button class="mode-card" id="teamModeBtn"><span class="icon">🤝</span><div class="title">단체전</div><div class="desc">팀을 나눠 순서대로 도전해요.</div></button>
         <button class="mode-card" id="quizModeBtn"><span class="icon">❓</span><div class="title">퀴즈형식</div><div class="desc">각자 자기 속도로 얼굴 맞히기 퀴즈를 풀어요.</div></button>
       </div>
+      <button class="btn btn-ghost" id="toggleEditCategoriesBtn" style="margin-top:16px; width:100%;">✏️ 추가 항목 이름 수정</button>
+      <div id="editCategoriesBox" hidden style="margin-top:14px;">
+        <div class="field">
+          <label for="editCustomField1Input">추가 항목 1</label>
+          <input type="text" id="editCustomField1Input" maxlength="12">
+        </div>
+        <div class="field">
+          <label for="editCustomField2Input">추가 항목 2</label>
+          <input type="text" id="editCustomField2Input" maxlength="12">
+        </div>
+        <div class="field">
+          <label for="editCustomField3Input">추가 항목 3</label>
+          <input type="text" id="editCustomField3Input" maxlength="12">
+        </div>
+        <p class="hint" style="margin-top:-4px;">이름을 바꾸면 화면에 보이는 항목 이름이 바로 바뀌어요. 다음 라운드부터 적용하고 싶다면 이번 라운드가 끝난 뒤에 바꿔주세요.</p>
+        <button class="btn btn-primary btn-full" id="saveCategoriesBtn">저장</button>
+      </div>
     </div>
   </section>
 
   <!-- 2a. 승부 방식 선택 (호스트 전용) -->
   <section id="scoreModeScreen" hidden>
+    <div class="panel">
+      <h2>한 사람당 몇 종류를 매칭할까요?</h2>
+      <p class="hint">사진·이름은 항상 포함돼요. 늘릴수록 소지품·음식·취미 카드가 추가돼요 (참가자가 입력하지 않은 항목은 자동으로 빠져요).</p>
+      <div class="team-count-row">
+        <span style="font-weight:600; font-size:14px; color:var(--ink-soft);">매칭 항목 수</span>
+        <div class="stepper">
+          <button type="button" id="matchSizeMinus">－</button>
+          <div class="count" id="matchSizeLabel">2</div>
+          <button type="button" id="matchSizePlus">＋</button>
+        </div>
+      </div>
+      <p class="hint" id="matchSizeHint" style="margin-top:-8px;">사진 + 이름</p>
+    </div>
     <div class="panel">
       <h2>무엇으로 승부를 낼까요?</h2>
       <p class="hint">게임이 끝났을 때 어떤 기준으로 결과를 보여줄지 정해주세요.</p>
@@ -371,6 +428,7 @@ input:focus{ border-color: var(--teal); }
   <section id="gameScreen" hidden>
     <div class="game-top">
       <span class="room-tag" id="gameRoomTag">방 0000</span>
+      <span class="room-tag" id="matchSizeTag" hidden></span>
       <div class="stats">
         <div id="movesStatBox">시도 <b id="movesCount">0</b></div>
         <div id="timeStatBox" hidden>⏱️ <b id="timeCount">00:00</b></div>
@@ -445,14 +503,17 @@ const els = {};
 ['roleScreen','hostSetupScreen','codeEntryScreen','registerScreen','lobbyScreen','scoreModeScreen','teamSetupScreen','gameScreen','quizScreen','resultScreen',
  'resumeBox','resumeAvatar','resumeAvatarFallback','resumeName','resumeExtra','resumeActions','resumeBtn','clearSessionBtn',
  'createRoleBtn','joinRoleBtn','demoRoleBtn',
- 'hostCodeInput','hostPasswordInput','hostParticipateCheckbox','hostSetupError','backFromHostSetupBtn','hostSetupNextBtn',
+ 'hostCodeInput','hostPasswordInput','hostParticipateCheckbox','customField1Input','customField2Input','customField3Input','hostSetupError','backFromHostSetupBtn','hostSetupNextBtn',
  'codeInput','joinPasswordInput','codeError','backFromCodeBtn','checkCodeBtn',
  'registerTitle','nameMatchBox','nameMatchText','claimExistingBtn','dismissClaimBtn',
  'photoPicker','photoInput','photoPreview','photoPlaceholder','nameInput','registerError','registerBtn',
+ 'extraFieldsHint','extra1Field','extra1Label','extra1Input','extra2Field','extra2Label','extra2Input','extra3Field','extra3Label','extra3Input',
  'adminBadge','lobbyCode','lobbyQr','playerCount','playerList','waitingNote','hostControls','soloModeBtn','teamModeBtn','quizModeBtn',
+ 'toggleEditCategoriesBtn','editCategoriesBox','editCustomField1Input','editCustomField2Input','editCustomField3Input','saveCategoriesBtn',
+ 'matchSizeMinus','matchSizePlus','matchSizeLabel','matchSizeHint',
  'scoreModeTimeBtn','scoreModeAttemptsBtn','backToLobbyFromScoreModeBtn',
  'teamCountLabel','teamMinus','teamPlus','teamNameList','startTeamGameBtn','backToLobbyFromTeamBtn',
- 'gameRoomTag','movesStatBox','movesCount','timeStatBox','timeCount','matchCount','totalPairs','turnPill','teamScoreboard','grid',
+ 'gameRoomTag','matchSizeTag','movesStatBox','movesCount','timeStatBox','timeCount','matchCount','totalPairs','turnPill','teamScoreboard','grid',
  'revealResultsPanel','revealResultsBtn','revealWaitingNote',
  'quizRoomTag','quizScoreLabel','quizQuestionPanel','quizProgress','quizPhoto','quizChoices','quizResultPanel','quizResultBig','quizResultSummary','leaderboardList',
  'resultTitle','resultSummary','resultSubStat','rankList','newRoundBtn','resultWaitingNote'
@@ -487,6 +548,24 @@ let pendingPhoto = null;
 let localTeamCount = 2, localTeamNames = ['1팀','2팀'];
 let pendingMemoryMode = 'solo';
 let pendingScoreMode = 'attempts';
+let pendingMatchSize = 2;
+let preRegisterCustomFields = ['소지품','좋아하는 음식','취미']; // used before roomCache is subscribed
+const EXTRA_KEYS = ['extra1','extra2','extra3'];
+
+function activeCustomFields(){
+  return (roomCache && roomCache.customFields) ? roomCache.customFields : preRegisterCustomFields;
+}
+function getActiveCategories(){
+  const cats = ['photo','name'];
+  activeCustomFields().forEach((label,i)=>{ if(label && label.trim()) cats.push(EXTRA_KEYS[i]); });
+  return cats;
+}
+function getCategoryLabel(key){
+  if(key === 'photo') return '사진';
+  if(key === 'name') return '이름';
+  const idx = EXTRA_KEYS.indexOf(key);
+  return (idx >= 0 && activeCustomFields()[idx]) ? activeCustomFields()[idx] : key;
+}
 let quizLocalLock = false;
 let matchedExistingPlayer = null; // for name-collision resume flow
 
@@ -538,21 +617,28 @@ async function createDemoRoom(){
   }
   if(!code) code = genCode();
 
+  const demoCustomFields = ['소지품','좋아하는 음식','취미'];
   await setDoc(doc(db,'rooms',code), {
-    status: 'lobby', mode: null, hostPlayerId: null, roundId: 0, password: 'demo',
+    status: 'lobby', mode: null, hostPlayerId: null, roundId: 0, password: 'demo', customFields: demoCustomFields,
     cards: [], flippedIndices: [], mismatchAt: null,
     moves: 0, matches: 0, totalPairs: 0, teams: [], currentTeamIdx: 0,
     createdAt: Date.now()
   });
+  preRegisterCustomFields = demoCustomFields;
 
   const shuffledNames = [...DEMO_NAMES].sort(()=> Math.random()-0.5).slice(0, 8);
   const avatarIds = pickDemoAvatarIds(shuffledNames.length);
+  const belongingsPool = ['우산','에어팟','텀블러','안경','손수건','보조배터리','책','인형'];
+  const foodPool = ['떡볶이','치킨','피자','마라탕','초밥','파스타','삼겹살','냉면'];
+  const hobbyPool = ['등산','독서','게임','요리','러닝','사진','노래','자전거'];
   const baseTime = Date.now();
   for(let i=0;i<shuffledNames.length;i++){
     const name = shuffledNames[i];
     const photo = `https://i.pravatar.cc/150?img=${avatarIds[i]}`;
     await setDoc(doc(db,'rooms',code,'players', genId()), {
-      name, photo, joinedAt: baseTime + i,
+      name, photo, extra1: belongingsPool[i % belongingsPool.length],
+      extra2: foodPool[i % foodPool.length], extra3: hobbyPool[i % hobbyPool.length],
+      joinedAt: baseTime + i,
       quizOrder: [], quizIndex: 0, quizScore: 0, quizFinished: false, quizRoundId: -1
     });
   }
@@ -560,6 +646,7 @@ async function createDemoRoom(){
   roomCode = code;
   pendingHostClaim = true;
   els.registerTitle.textContent = '테스트 참가자로 등록하기 (내 사진으로 직접 참여)';
+  applyExtraFieldLabels(demoCustomFields);
   resetRegisterForm();
   showOnly(els.registerScreen);
 }
@@ -578,19 +665,26 @@ els.hostSetupNextBtn.addEventListener('click', async ()=>{
     if(snap.exists()){ els.hostSetupError.textContent = '이미 사용 중인 코드예요. 다른 코드를 입력해주세요.'; return; }
 
     roomCode = code;
+    const customFields = [
+      els.customField1Input.value.trim(),
+      els.customField2Input.value.trim(),
+      els.customField3Input.value.trim()
+    ];
     // room is created right here, regardless of whether the host also plays —
     // this guarantees the room exists as soon as this step is done.
     await setDoc(doc(db, 'rooms', roomCode), {
-      status: 'lobby', mode: null, hostPlayerId: null, roundId: 0, password,
+      status: 'lobby', mode: null, hostPlayerId: null, roundId: 0, password, customFields,
       cards: [], flippedIndices: [], mismatchAt: null,
       moves: 0, matches: 0, totalPairs: 0, teams: [], currentTeamIdx: 0,
       createdAt: Date.now()
     });
+    preRegisterCustomFields = customFields;
 
     if(els.hostParticipateCheckbox.checked){
       pendingHostClaim = true;
       els.registerTitle.textContent = '호스트로 등록하기';
       resetRegisterForm();
+      applyExtraFieldLabels(customFields);
       showOnly(els.registerScreen);
     } else {
       isAdminController = true; playerId = null;
@@ -613,10 +707,13 @@ els.checkCodeBtn.addEventListener('click', async ()=>{
   try{
     const snap = await getDoc(doc(db, 'rooms', code));
     if(!snap.exists()){ els.codeError.textContent = '존재하지 않는 방 코드예요.'; return; }
-    if(snap.data().password !== password){ els.codeError.textContent = '비밀번호가 틀렸어요.'; return; }
+    const roomData = snap.data();
+    if(roomData.password !== password){ els.codeError.textContent = '비밀번호가 틀렸어요.'; return; }
     roomCode = code;
+    preRegisterCustomFields = roomData.customFields || ['소지품','좋아하는 음식','취미'];
     els.registerTitle.textContent = '참가자 등록';
     resetRegisterForm();
+    applyExtraFieldLabels(preRegisterCustomFields);
     showOnly(els.registerScreen);
   }catch(e){
     els.codeError.textContent = '연결에 실패했어요. Firestore 규칙을 확인해주세요.';
@@ -629,11 +726,32 @@ els.checkCodeBtn.addEventListener('click', async ()=>{
 const urlRoom = new URLSearchParams(location.search).get('room');
 
 // ---- register (photo + name) ----
+function applyExtraFieldLabels(fields){
+  const defs = [
+    { field: els.extra1Field, label: els.extra1Label, input: els.extra1Input },
+    { field: els.extra2Field, label: els.extra2Label, input: els.extra2Input },
+    { field: els.extra3Field, label: els.extra3Label, input: els.extra3Input }
+  ];
+  let anyVisible = false;
+  defs.forEach((d, i)=>{
+    const name = (fields[i] || '').trim();
+    if(name){
+      d.field.hidden = false;
+      d.label.textContent = `${name} (선택)`;
+      d.input.placeholder = `${name} 입력해주세요`;
+      anyVisible = true;
+    } else {
+      d.field.hidden = true;
+    }
+  });
+  els.extraFieldsHint.hidden = !anyVisible;
+}
 function resetRegisterForm(){
   pendingPhoto = null; matchedExistingPlayer = null;
   els.photoPreview.hidden = true; els.photoPreview.src = '';
   els.photoPlaceholder.hidden = false; els.photoInput.value = '';
   els.nameInput.value = ''; els.registerError.textContent = '';
+  els.extra1Input.value = ''; els.extra2Input.value = ''; els.extra3Input.value = '';
   els.nameMatchBox.hidden = true;
 }
 function downscale(dataUrl, maxSize, quality){
@@ -709,14 +827,22 @@ els.registerBtn.addEventListener('click', async ()=>{
 });
 
 async function enterRoomAsPlayer(isNewPlayer, name){
+  const extra1 = els.extra1Input.value.trim();
+  const extra2 = els.extra2Input.value.trim();
+  const extra3 = els.extra3Input.value.trim();
   if(isNewPlayer){
     await setDoc(doc(db, 'rooms', roomCode, 'players', playerId), {
-      name, photo: pendingPhoto, joinedAt: Date.now(),
+      name, photo: pendingPhoto, extra1, extra2, extra3, joinedAt: Date.now(),
       quizOrder: [], quizIndex: 0, quizScore: 0, quizFinished: false, quizRoundId: -1
     });
-  } else if(pendingPhoto){
-    // resumed as existing player with a fresh photo
-    await updateDoc(doc(db, 'rooms', roomCode, 'players', playerId), { photo: pendingPhoto });
+  } else {
+    // resumed as an existing player — refresh whichever fields were re-entered
+    const updates = {};
+    if(pendingPhoto) updates.photo = pendingPhoto;
+    if(extra1) updates.extra1 = extra1;
+    if(extra2) updates.extra2 = extra2;
+    if(extra3) updates.extra3 = extra3;
+    if(Object.keys(updates).length) await updateDoc(doc(db, 'rooms', roomCode, 'players', playerId), updates);
   }
   if(pendingHostClaim){
     await updateDoc(doc(db, 'rooms', roomCode), { hostPlayerId: playerId });
@@ -772,6 +898,26 @@ function renderLobby(){
   els.waitingNote.hidden = host;
 }
 
+els.toggleEditCategoriesBtn.addEventListener('click', ()=>{
+  const opening = els.editCategoriesBox.hidden;
+  els.editCategoriesBox.hidden = !opening;
+  if(opening){
+    const fields = activeCustomFields();
+    els.editCustomField1Input.value = fields[0] || '';
+    els.editCustomField2Input.value = fields[1] || '';
+    els.editCustomField3Input.value = fields[2] || '';
+  }
+});
+els.saveCategoriesBtn.addEventListener('click', async ()=>{
+  const customFields = [
+    els.editCustomField1Input.value.trim(),
+    els.editCustomField2Input.value.trim(),
+    els.editCustomField3Input.value.trim()
+  ];
+  await updateDoc(doc(db,'rooms',roomCode), { customFields });
+  els.editCategoriesBox.hidden = true;
+});
+
 function setupTeamNameInputs(){
   els.teamCountLabel.textContent = localTeamCount;
   while(localTeamNames.length < localTeamCount) localTeamNames.push(`${localTeamNames.length+1}팀`);
@@ -789,27 +935,51 @@ els.teamMinus.addEventListener('click', ()=>{ if(localTeamCount>2){ localTeamCou
 els.teamPlus.addEventListener('click', ()=>{ if(localTeamCount<6){ localTeamCount++; setupTeamNameInputs(); } });
 els.backToLobbyFromTeamBtn.addEventListener('click', ()=> showOnly(els.lobbyScreen));
 
-els.soloModeBtn.addEventListener('click', ()=>{ pendingMemoryMode = 'solo'; showOnly(els.scoreModeScreen); });
-els.teamModeBtn.addEventListener('click', ()=>{ pendingMemoryMode = 'team'; showOnly(els.scoreModeScreen); });
+els.soloModeBtn.addEventListener('click', ()=>{ pendingMemoryMode = 'solo'; pendingMatchSize = 2; updateMatchSizeUI(); showOnly(els.scoreModeScreen); });
+els.teamModeBtn.addEventListener('click', ()=>{ pendingMemoryMode = 'team'; pendingMatchSize = 2; updateMatchSizeUI(); showOnly(els.scoreModeScreen); });
 els.quizModeBtn.addEventListener('click', ()=> startQuizMode());
 els.backToLobbyFromScoreModeBtn.addEventListener('click', ()=> showOnly(els.lobbyScreen));
+els.matchSizeMinus.addEventListener('click', ()=>{ if(pendingMatchSize>2){ pendingMatchSize--; updateMatchSizeUI(); } });
+els.matchSizePlus.addEventListener('click', ()=>{ if(pendingMatchSize<getActiveCategories().length){ pendingMatchSize++; updateMatchSizeUI(); } });
+function updateMatchSizeUI(){
+  const maxCats = getActiveCategories().length;
+  pendingMatchSize = Math.min(pendingMatchSize, maxCats);
+  els.matchSizeLabel.textContent = pendingMatchSize;
+  const cats = getActiveCategories().slice(0, pendingMatchSize);
+  els.matchSizeHint.textContent = cats.map(c => getCategoryLabel(c)).join(' + ');
+}
+updateMatchSizeUI();
 els.scoreModeTimeBtn.addEventListener('click', ()=> chooseScoreMode('time'));
 els.scoreModeAttemptsBtn.addEventListener('click', ()=> chooseScoreMode('attempts'));
-els.startTeamGameBtn.addEventListener('click', ()=> startMemoryGame('team', pendingScoreMode));
+els.startTeamGameBtn.addEventListener('click', ()=> startMemoryGame('team', pendingScoreMode, pendingMatchSize));
 
 function chooseScoreMode(scoreMode){
   pendingScoreMode = scoreMode;
   if(pendingMemoryMode === 'team'){ setupTeamNameInputs(); showOnly(els.teamSetupScreen); }
-  else{ startMemoryGame('solo', scoreMode); }
+  else{ startMemoryGame('solo', scoreMode, pendingMatchSize); }
 }
 
-async function startMemoryGame(mode, scoreMode){
+function fieldValueForCategory(person, cat){
+  if(cat === 'photo') return person.photo;
+  if(cat === 'name') return person.name;
+  return (person[cat] || '').trim();
+}
+
+async function startMemoryGame(mode, scoreMode, matchSize){
   if(playersCache.length < 4){ alert('최소 4명이 모여야 시작할 수 있어요.'); return; }
+  const availableCats = getActiveCategories();
+  const size = Math.min(availableCats.length, Math.max(2, matchSize || 2));
+  const selectedCats = availableCats.slice(0, size);
   const cards = [];
-  playersCache.forEach(p=>{ cards.push({ pairId: p.id, type: 'photo' }); cards.push({ pairId: p.id, type: 'name' }); });
+  playersCache.forEach(p=>{
+    selectedCats.forEach(cat=>{
+      const value = fieldValueForCategory(p, cat);
+      if(value) cards.push({ pairId: p.id, type: cat });
+    });
+  });
   shuffle(cards);
   const update = {
-    mode, scoreMode: scoreMode || 'attempts', cards, flippedIndices: [], mismatchAt: null,
+    mode, scoreMode: scoreMode || 'attempts', matchSize: size, cards, flippedIndices: [], mismatchAt: null,
     moves: 0, matches: 0, totalPairs: playersCache.length,
     status: 'playing', roundId: (roomCache.roundId || 0) + 1,
     startedAt: Date.now(), finishedAt: null, boardCleared: false
@@ -833,6 +1003,9 @@ function personById(id){ return playersCache.find(p => p.id === id); }
 function renderGameBoard(){
   els.gameRoomTag.textContent = '방 ' + roomCode;
   const cards = roomCache.cards || [];
+  const size = roomCache.matchSize || 2;
+  els.matchSizeTag.hidden = false;
+  els.matchSizeTag.textContent = getActiveCategories().slice(0, size).map(c => getCategoryLabel(c)).join(' + ');
   els.movesCount.textContent = roomCache.moves || 0;
   els.matchCount.textContent = roomCache.matches || 0;
   els.totalPairs.textContent = roomCache.totalPairs || 0;
@@ -870,9 +1043,16 @@ function renderGameBoard(){
     if(!person) return;
     const card = document.createElement('div');
     card.className = 'card' + (c.flipped ? ' flipped' : '') + (c.matched ? ' matched' : '');
-    const front = c.type === 'photo'
-      ? `<img src="${person.photo}"><div class="caption">${escapeHtml(person.name)}</div>`
-      : `<div class="name-only">${escapeHtml(person.name)}</div>`;
+    let front;
+    if(c.type === 'photo'){
+      front = `<img src="${person.photo}"><div class="caption">${escapeHtml(person.name)}</div>`;
+    } else if(c.type === 'name'){
+      front = `<div class="name-only">${escapeHtml(person.name)}</div>`;
+    } else {
+      const tag = '🔖 ' + getCategoryLabel(c.type);
+      const value = person[c.type] || '';
+      front = `<div class="name-only"><span class="cat-tag">${tag}</span>${escapeHtml(value)}</div>`;
+    }
     card.innerHTML = `<div class="card-inner"><div class="card-face card-back"></div><div class="card-face card-front">${front}</div></div>`;
     card.addEventListener('click', ()=> flipCard(idx));
     els.grid.appendChild(card);
@@ -915,19 +1095,29 @@ async function flipCard(idx){
       const cards = data.cards.slice();
       const flippedIdx = (data.flippedIndices || []).slice();
       const card = cards[idx];
-      if(!card || card.matched || card.flipped || flippedIdx.length >= 2) return;
+      const maxGroup = data.matchSize || 2;
+      if(!card || card.matched || card.flipped || flippedIdx.includes(idx) || flippedIdx.length >= maxGroup) return;
 
       card.flipped = true;
       flippedIdx.push(idx);
       const update = { cards, flippedIndices: flippedIdx };
 
-      if(flippedIdx.length === 2){
+      const pairId = cards[flippedIdx[0]].pairId;
+      const allSamePerson = flippedIdx.every(i => cards[i].pairId === pairId);
+
+      if(!allSamePerson){
+        // this flip broke the streak — resolve as a failed attempt
         update.moves = (data.moves || 0) + 1;
-        const [i1, i2] = flippedIdx;
-        if(cards[i1].pairId === cards[i2].pairId){
-          cards[i1].matched = true; cards[i2].matched = true;
-          update.matches = (data.matches || 0) + 1;
+        update.mismatchAt = Date.now();
+      } else {
+        const totalForPerson = data.cards.filter(c => c.pairId === pairId).length;
+        if(flippedIdx.length === totalForPerson){
+          // collected every card for this person — success!
+          update.moves = (data.moves || 0) + 1;
+          flippedIdx.forEach(i => { cards[i] = { ...cards[i], matched: true }; });
+          update.cards = cards;
           update.flippedIndices = [];
+          update.matches = (data.matches || 0) + 1;
           if(data.mode === 'team'){
             const teams = data.teams.slice();
             teams[data.currentTeamIdx] = { ...teams[data.currentTeamIdx], score: teams[data.currentTeamIdx].score + 1 };
@@ -937,9 +1127,8 @@ async function flipCard(idx){
             update.boardCleared = true;
             update.finishedAt = Date.now();
           }
-        } else {
-          update.mismatchAt = Date.now();
         }
+        // else: still collecting this person's cards — leave flipped, wait for the next flip
       }
       tx.update(ref, update);
     });
@@ -950,7 +1139,7 @@ let mismatchTimer = null;
 function maybeScheduleMismatchResolve(){
   if(mismatchTimer){ clearTimeout(mismatchTimer); mismatchTimer = null; }
   const flippedIdx = roomCache.flippedIndices || [];
-  if(flippedIdx.length === 2 && roomCache.mismatchAt){
+  if(flippedIdx.length >= 1 && roomCache.mismatchAt){
     const elapsed = Date.now() - roomCache.mismatchAt;
     const wait = Math.max(0, 900 - elapsed);
     mismatchTimer = setTimeout(resolveMismatch, wait);
@@ -963,12 +1152,10 @@ async function resolveMismatch(){
       const snap = await tx.get(ref);
       const data = snap.data();
       const flippedIdx = data.flippedIndices || [];
-      if(flippedIdx.length !== 2 || !data.mismatchAt) return;
+      if(flippedIdx.length < 1 || !data.mismatchAt) return;
       const cards = data.cards.slice();
-      const [i1, i2] = flippedIdx;
-      if(cards[i1].matched || cards[i2].matched) return;
-      cards[i1] = { ...cards[i1], flipped: false };
-      cards[i2] = { ...cards[i2], flipped: false };
+      if(flippedIdx.some(i => cards[i].matched)) return;
+      flippedIdx.forEach(i => { cards[i] = { ...cards[i], flipped: false }; });
       const update = { cards, flippedIndices: [], mismatchAt: null };
       if(data.mode === 'team' && data.teams && data.teams.length){
         update.currentTeamIdx = (data.currentTeamIdx + 1) % data.teams.length;
@@ -1111,7 +1298,7 @@ els.newRoundBtn.addEventListener('click', async ()=>{
   await updateDoc(doc(db,'rooms',roomCode), {
     status: 'lobby', mode: null, cards: [], flippedIndices: [], mismatchAt: null,
     moves: 0, matches: 0, totalPairs: 0, teams: [], currentTeamIdx: 0,
-    scoreMode: null, startedAt: null, finishedAt: null, boardCleared: false
+    scoreMode: null, matchSize: null, startedAt: null, finishedAt: null, boardCleared: false
   });
 });
 
